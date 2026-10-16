@@ -27,6 +27,12 @@
   button.primary { background:#8a6d1f; border-color:#e8c87a; font-weight:bold; }
   button:disabled { opacity:.4; cursor:default; }
   #offerVal { font-size:22px; color:#ffd98a; min-width:70px; text-align:center; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:16px; border-radius:8px;
+                      background:#5a4326; outline:none; margin:8px 0 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:27px; height:27px; border-radius:50%;
+                      background:#ffd98a; border:2px solid #8a6d1f; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.5); }
+  input[type=range]::-moz-range-thumb { width:25px; height:25px; border-radius:50%;
+                      background:#ffd98a; border:2px solid #8a6d1f; cursor:pointer; }
   #actionBtn { position:absolute; right:14px; bottom:14px; font-size:17px; padding:12px 20px; display:none; z-index:4;
                background:#c07f3a; border:2px solid #ffd98a; font-weight:bold; color:#fff8ea;
                box-shadow:0 4px 16px rgba(0,0,0,.55); }
@@ -51,13 +57,10 @@
   <div class="panel" id="hagglePanel">
     <h2 id="haggleTitle">Haggle</h2>
     <p id="haggleBook"></p>
-    <p>Your appraisal: <b id="haggleRange"></b></p>
+    <p>Your appraisal: <b id="haggleRange" style="color:#35c4b5;"></b> <span style="color:#35c4b5;">(teal band on the bar)</span></p>
     <p>Seller asks: <b id="haggleAsk"></b> · Their patience is draining…</p>
-    <div class="row">
-      <button data-adj="-10">−10</button><button data-adj="-1">−1</button>
-      <span id="offerVal">0</span>
-      <button data-adj="1">+1</button><button data-adj="10">+10</button>
-    </div>
+    <p style="margin-top:10px;">Your offer: <span id="offerVal">0</span> 🪙</p>
+    <input type="range" id="offerSlider" min="0" step="1" value="0">
     <div class="row">
       <button class="primary" id="offerBtn">Make offer</button>
       <button id="declineBtn">Decline</button>
@@ -220,13 +223,23 @@ function openHaggle(seller) {
     GENRE_NAME[seller.book.genre] + (seller.book.special ? ' (special edition!)' : '') +
     ' · Its true sell price is hidden — you only get a range. Pay more than it\'s worth and you lose money at the till.';
   const [lo, hi] = appraisalRange(seller.book);
+  const slider = $('offerSlider');
+  const max = Math.max(hi, seller.ask);            // bar runs 0 → top of range or the ask, whichever is higher
+  slider.max = max; slider.value = haggle.offer;
+  const pLo = (lo / max * 100).toFixed(1), pHi = (hi / max * 100).toFixed(1);
+  slider.style.background = 'linear-gradient(90deg, #5a4326 0%, #5a4326 ' + pLo + '%, #35c4b5 ' + pLo + '%, #35c4b5 ' + pHi + '%, #5a4326 ' + pHi + '%, #5a4326 100%)';
   $('haggleRange').textContent = lo + ' – ' + hi + ' coins';
   $('haggleAsk').textContent = seller.ask;
   $('haggleMsg').textContent = '';
   syncOffer();
   $('hagglePanel').style.display = 'block';
 }
-function syncOffer() { $('offerVal').textContent = haggle ? haggle.offer : 0; $('offerBtn').disabled = !haggle || haggle.offer > coins; }
+function syncOffer() {
+  if (haggle) haggle.offer = +$('offerSlider').value;
+  $('offerVal').textContent = haggle ? haggle.offer : 0;
+  $('offerBtn').disabled = !haggle || haggle.offer > coins || haggle.offer < 1;
+}
+$('offerSlider').addEventListener('input', syncOffer);
 function closeHaggle(result) {
   const s = haggle.seller;
   if (result === 'deal') { s.state = 'leaveHappy'; }
@@ -234,11 +247,9 @@ function closeHaggle(result) {
   haggle = null;
   $('hagglePanel').style.display = 'none';
 }
-document.querySelectorAll('#hagglePanel [data-adj]').forEach(btn => {
-  btn.addEventListener('click', () => { if (!haggle) return; haggle.offer = Math.max(1, haggle.offer + (+btn.dataset.adj)); syncOffer(); });
-});
 $('offerBtn').addEventListener('click', () => {
   if (!haggle) return;
+  syncOffer();
   const s = haggle.seller, offer = haggle.offer;
   if (offer >= s.floor) {
     if (carry.length >= CARRY_MAX) { $('haggleMsg').textContent = 'Your arms are full (max ' + CARRY_MAX + '). Stock something first!'; return; }
