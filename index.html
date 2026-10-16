@@ -87,7 +87,7 @@
   </div>
 </div>
 <div id="introBar" style="display:none; position:absolute; left:50%; bottom:70px; transform:translateX(-50%); width:min(560px,92%); background:rgba(30,21,13,.96); border:1.5px solid #c9a35a; border-radius:12px; padding:10px 16px 8px; z-index:6; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.5);">
-  <div id="introName" style="font:700 11px Georgia,serif; letter-spacing:.14em; color:#c9a35a;">LANDLORD</div>
+  <div id="introName" style="font:700 11px Georgia,serif; letter-spacing:.14em; color:#c9a35a;">MYSTERIOUS MAN</div>
   <div id="introLine" style="font:italic 17px Georgia,serif; color:#f3e9d2; margin:3px 0 2px;">Psst. Wanna buy a bookstore?</div>
   <div style="font:11px Georgia,serif; color:#9a8a70; text-align:right;">tap to continue ▸</div>
 </div>
@@ -152,9 +152,9 @@ function rf(a, b) { return a + Math.random() * (b - a); }
 // bookstore saved up 5,000 coins — and an unscrupulous landlord sprang a
 // run-down one on him. 5,000 in, 500 left.
 const INTRO_LINES = [
-  { who: 'LANDLORD', line: 'Psst. Wanna buy a bookstore?' },
+  { who: 'MYSTERIOUS MAN', line: 'Psst. Wanna buy a bookstore?' },
   { who: 'YOU', line: "Oh boy! I've always wanted a bookstore!" },
-  { who: 'LANDLORD', line: 'Deal.' },
+  { who: 'MYSTERIOUS MAN', line: 'Deal.' },
   { who: 'YOU', line: "…It's a bit run-down. And — wait, where did he go?" }
 ];
 let introStep = -1, introCoins = 5000, coinAnim = null, landlord = null, storySeen = false;
