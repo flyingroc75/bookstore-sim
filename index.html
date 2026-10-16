@@ -91,7 +91,7 @@
   </div>
 
   <div class="panel" id="winPanel" style="display:none;">
-    <h2 id="winTitle">🎉 Survived week 1!</h2>
+    <h2 id="winTitle">🎉 Survived week!</h2>
     <p>Rent paid in cash. The Mysterious Man tips his hat and vanishes into the night — the shop is yours for another week.</p>
     <div class="row"><button class="primary" id="winOk">Keep going ▸</button></div>
   </div>
@@ -723,7 +723,6 @@ function showRent() {
 $('rentPay').addEventListener('click', () => {
   coins -= 500; stats.rentPaid = 500;
   $('rentPanel').style.display = 'none';
-  $('winTitle').textContent = '🎉 Survived week ' + (day / 3) + '!';
   $('winPanel').style.display = 'block';
   spawnConfetti();
 });
