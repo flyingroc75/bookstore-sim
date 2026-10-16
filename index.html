@@ -231,7 +231,12 @@ function updateIntro(dt) {
 function reset() {
   coins = 500;
   shelfStock = { green: [], purple: [] };
-  for (let i = 0; i < 6; i++) { shelfStock.green.push(makeBook('green', false)); shelfStock.purple.push(makeBook('purple', false)); }
+  // Starting stock is priced flat: every opening book sells for 25, so the
+  // run always opens at 500 coins + 12 x 25 = 800 net worth.
+  for (let i = 0; i < 6; i++) {
+    const g = makeBook('green', false); g.sellPrice = 25; shelfStock.green.push(g);
+    const p = makeBook('purple', false); p.sellPrice = 25; shelfStock.purple.push(p);
+  }
   carry = [];
   customers = [];
   dayT = 0; spawnT = 1.2; running = false; over = false; haggle = null;
