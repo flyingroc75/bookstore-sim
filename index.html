@@ -84,18 +84,10 @@
     <div class="row"><button class="primary" id="restartBtn">Open a new day</button></div>
   </div>
 
-  <div class="panel" id="startPanel" style="display:none;">
-    <h2>📚 Opening Day</h2>
-    <p>The deed is yours, the landlord is gone, and of your 5,000 coins you have <b>500 left</b>. The shop — somewhat run-down — came stocked: 6 non-fiction (green) and 6 fiction (purple) on the shelves.</p>
-    <p><b>Buyers</b> go to their genre's shelf, take a book, then queue at the <b>sell counter</b> (right) — walk there to ring them up. Each book sells at its own price, fixed but hidden from you: at the buy counter you only ever see a <b>range</b>.</p>
-    <p><b>Sellers</b> queue at the <b>buy counter</b> (left) — haggle with them there. Books you buy go in your arms — carry them to the matching shelf to stock them.</p>
-    <p>Everyone has a patience meter. Too slow, or the shelf is empty, and they walk out. The day lasts <b>4 minutes</b>.</p>
-    <p>Walk by <b>clicking / tapping</b> where you want to go, and use the big <b>action button</b> when it appears.</p>
-    <div class="row"><button class="primary" id="startBtn">Open the shop</button></div>
   </div>
 </div>
 <div id="introBar" style="display:none; position:absolute; left:50%; bottom:70px; transform:translateX(-50%); width:min(560px,92%); background:rgba(30,21,13,.96); border:1.5px solid #c9a35a; border-radius:12px; padding:10px 16px 8px; z-index:6; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.5);">
-  <div id="introName" style="font:700 11px Georgia,serif; letter-spacing:.14em; color:#c9a35a;">SLY LANDLORD</div>
+  <div id="introName" style="font:700 11px Georgia,serif; letter-spacing:.14em; color:#c9a35a;">LANDLORD</div>
   <div id="introLine" style="font:italic 17px Georgia,serif; color:#f3e9d2; margin:3px 0 2px;">Psst. Wanna buy a bookstore?</div>
   <div style="font:11px Georgia,serif; color:#9a8a70; text-align:right;">tap to continue ▸</div>
 </div>
@@ -160,12 +152,13 @@ function rf(a, b) { return a + Math.random() * (b - a); }
 // bookstore saved up 5,000 coins — and an unscrupulous landlord sprang a
 // run-down one on him. 5,000 in, 500 left.
 const INTRO_LINES = [
-  { who: 'SLY LANDLORD', line: 'Psst. Wanna buy a bookstore?' },
+  { who: 'LANDLORD', line: 'Psst. Wanna buy a bookstore?' },
   { who: 'YOU', line: "Oh boy! I've always wanted a bookstore!" },
-  { who: 'SLY LANDLORD', line: 'Deal.' },
+  { who: 'LANDLORD', line: 'Deal.' },
   { who: 'YOU', line: "…It's a bit run-down. And — wait, where did he go?" }
 ];
 let introStep = -1, introCoins = 5000, coinAnim = null, landlord = null, storySeen = false;
+let coinParticles = [], lastCoinBucket = 99, coinSpawnT = 0;
 function startIntro() {
   introStep = 0; introCoins = 5000; coinAnim = null;
   landlord = { id: 999, x: 532, y: 388, leaving: false, state: 'haggle', kind: 'seller',
@@ -186,18 +179,39 @@ function advanceIntro() {
   if (introStep >= INTRO_LINES.length) {
     storySeen = true; introStep = -1;
     $('introBar').style.display = 'none';
-    $('startPanel').style.display = 'block';
+    running = true;                       // no explanations — straight into the day
     return;
   }
   showIntroLine();
 }
 function updateIntro(dt) {
   if (coinAnim) {
-    coinAnim.t += dt / 1.4;
+    coinAnim.t += dt / 2.2;
     const k = Math.min(1, coinAnim.t);
     introCoins = 5000 - 4500 * k * k;
+    // a visible stream of coins flies from you to the landlord the whole way down
+    coinSpawnT -= dt;
+    if (k < 1 && coinSpawnT <= 0) {
+      coinSpawnT = 0.045;
+      coinParticles.push({ x: player.x + rf(-6, 6), y: player.y - 40, t: 0, dur: rf(0.45, 0.7), arc: rf(14, 30) });
+    }
+    // descending tick sounds as the total falls
+    const bucket = Math.floor(introCoins / 300);
+    if (bucket !== lastCoinBucket) {
+      lastCoinBucket = bucket;
+      if (Music.ctx && Music.ctx.state === 'running' && Music.on) pluck(880 - (5000 - introCoins) / 4500 * 380, Music.ctx.currentTime, 0.08, 0.028, 'triangle');
+    }
     if (k >= 1) { introCoins = 500; coinAnim = null; if (landlord && introStep === 2) { landlord.leaving = true; landlord.state = 'toDoor'; } }
   }
+  // coin particles arc from the player to the landlord (or the door once he's gone)
+  const tgt = landlord ? { x: landlord.x, y: landlord.y - 34 } : { x: DOOR.x, y: DOOR.y - 30 };
+  coinParticles = coinParticles.filter(p => {
+    p.t += dt / p.dur;
+    if (p.t >= 1) return false;
+    p.x += (tgt.x - p.x) * Math.min(1, dt * 7);
+    p.y += (tgt.y - p.y) * Math.min(1, dt * 7) - Math.sin(p.t * Math.PI) * p.arc * dt * 2.2;
+    return true;
+  });
   if (landlord && landlord.leaving) {
     if (moveToward(landlord, DOOR.x, DOOR.y + 24, 175, dt)) landlord = null;
   }
@@ -447,7 +461,7 @@ const keys = {};
 addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   if (e.key.toLowerCase() === 'e' || e.key === ' ') { doInteract(); e.preventDefault(); }
-  if (e.key.toLowerCase() === 'r' && over) { reset(); $('startPanel').style.display = 'block'; }
+  if (e.key.toLowerCase() === 'r' && over) { reset(); running = true; }
 });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
@@ -560,7 +574,7 @@ function update(dt) {
 }
 
 function refreshHUD() {
-  $('coins').textContent = (introStep >= 0 && !storySeen) ? Math.round(introCoins) : coins;
+  $('coins').textContent = (introStep >= 0 && !storySeen) ? Math.round(introCoins).toLocaleString('en-US') : coins;
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
   $('carry').textContent = carry.length ? carry.map(b => (b.genre === 'green' ? '🟩' : '🟪') + (b.special ? '✦' : '')).join(' ') : '—';
@@ -588,8 +602,7 @@ function endDay() {
   $('tallyBody').innerHTML = $('tallyBody').innerHTML.split('🪙').join(COIN);
   $('tallyPanel').style.display = 'block';
 }
-$('restartBtn').addEventListener('click', () => { reset(); $('startPanel').style.display = 'block'; });
-$('startBtn').addEventListener('click', () => { $('startPanel').style.display = 'none'; running = true; musicStart(); sfx('sale'); });
+$('restartBtn').addEventListener('click', () => { reset(); running = true; musicStart(); });
 $('introBar').addEventListener('click', advanceIntro);
 
 // ---------- Draw ----------
@@ -816,6 +829,22 @@ function draw() {
   carry.forEach((b, i) => drawBook(player.x - 16 + i * 11, player.y - 60, b.genre, b.special, 0.7));
   // flash
   if (flashT > 0) { ctx.fillStyle = '#ffd98a'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center'; ctx.fillText(flashTxt.split('🪙').join('●'), W / 2, 150); }
+  // opening-sequence coin drain: a stream of coins flying to the landlord…
+  for (const p of coinParticles) {
+    ctx.fillStyle = '#d4af37'; ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#8a6d1f'; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1;
+    ctx.fillStyle = '#f6e27a'; ctx.beginPath(); ctx.arc(p.x - 2, p.y - 2, 2.6, 0, Math.PI * 2); ctx.fill();
+  }
+  // …and a giant count-down in the middle of the screen that nobody can miss
+  if (coinAnim) {
+    ctx.textAlign = 'center';
+    ctx.font = '13px Georgia'; ctx.fillStyle = '#f3e9d2';
+    ctx.fillText('Y O U R   C O I N S', W / 2, 196);
+    ctx.font = 'bold 52px Georgia';
+    const txt = Math.round(introCoins).toLocaleString('en-US');
+    ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(20,12,4,.85)'; ctx.strokeText(txt, W / 2, 248);
+    ctx.fillStyle = '#ffd94a'; ctx.fillText(txt, W / 2, 248); ctx.lineWidth = 1;
+  }
   requestAnimationFrame(draw);
 }
 
@@ -830,7 +859,7 @@ function loop(ts) {
 // A refresh / back-forward-cache restore can resurrect a stale DOM with panels
 // in odd states — on a persisted pageshow, force one clean opening state.
 addEventListener('pageshow', e => {
-  if (e.persisted) { reset(); if (storySeen) $('startPanel').style.display = 'block'; draw(); }
+  if (e.persisted) { reset(); if (storySeen) running = true; draw(); }
 });
 reset();
 draw();
