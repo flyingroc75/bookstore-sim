@@ -109,16 +109,18 @@ const COIN = '<span class="coin"></span>';
 
 // ---------- Layout ----------
 const W = 960, H = 600;
-const SHELF_TIERS = 3;               // big bookcases with room to grow into
+const SHELF_TIERS = 2;               // each bookcase: 2 tiers × 3 books = 6
 // Floor plan per Roy's sketch (2026-10-16): bookcases in the two TOP CORNERS,
-// counters along the bottom, door at the bottom-left. The back wall has room
-// for four cases total — the two middle slots stay reserved for future genres.
+// counters along the bottom, door at the bottom-left. Room for SIX more
+// bookshelves after these two: two more on the back wall, four as islands.
 const SHELF = {
-  green:  { x: 36,  y: 40, w: 210, h: 140 },
-  purple: { x: 714, y: 40, w: 210, h: 140 }
+  green:  { x: 36,  y: 40, w: 210, h: 116 },
+  purple: { x: 714, y: 40, w: 210, h: 116 }
 };
 const RESERVED_SLOTS = [
-  { x: 258, y: 40, w: 210, h: 140 }, { x: 480, y: 40, w: 210, h: 140 }
+  { x: 258, y: 40,  w: 210, h: 116 }, { x: 480, y: 40,  w: 210, h: 116 },
+  { x: 36,  y: 246, w: 210, h: 116 }, { x: 258, y: 246, w: 210, h: 116 },
+  { x: 480, y: 246, w: 210, h: 116 }, { x: 714, y: 246, w: 210, h: 116 }
 ];
 const BUY_COUNTER  = { x: 90,  y: 452, w: 300, h: 52 };
 const SELL_COUNTER = { x: 570, y: 452, w: 300, h: 52 };
@@ -658,9 +660,8 @@ function draw() {
   for (let y = 168; y < H; y += 26) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
   for (let x = 30; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 148); ctx.lineTo(x, H); ctx.stroke(); }
   // rug between the counters
-  ctx.fillStyle = '#74343a'; ctx.fillRect(392, 340, 176, 96);
-  ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(400, 348, 160, 80); ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(201,163,90,.5)'; ctx.strokeRect(412, 359, 136, 54);
+  ctx.fillStyle = '#74343a'; ctx.fillRect(402, 378, 156, 58);
+  ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(409, 385, 142, 44); ctx.lineWidth = 1;
   // reserved space on the back wall for future bookshelves
   ctx.setLineDash([6, 5]);
   for (let i = 0; i < RESERVED_SLOTS.length; i++) {
@@ -677,24 +678,24 @@ function draw() {
     ctx.fillStyle = '#7d5a30';
     ctx.fillRect(s.x - 6, s.y - 6, s.w + 12, 6); ctx.fillRect(s.x - 6, s.y + s.h, s.w + 12, 6);   // top/bottom boards
     ctx.fillRect(s.x - 6, s.y - 6, 6, s.h + 12); ctx.fillRect(s.x + s.w, s.y - 6, 6, s.h + 12);   // side posts
-    // big bookcase: SHELF_TIERS roomy tiers — today's 6 books rattle around in
-    // it on purpose; future capacity upgrades fill the space tier by tier.
+    // two tiers, exactly 3 book slots each — 6 books fill the case precisely
     const tiers = SHELF_TIERS;
     const tierH = (s.h - 6) / tiers;
     ctx.fillStyle = '#96733d';
     for (let t = 1; t < tiers; t++) ctx.fillRect(s.x, s.y + t * tierH, s.w, 5);               // middle boards
     ctx.fillRect(s.x, s.y + s.h - 3, s.w, 3);
-    const PER_TIER = 13;
-    shelfStock[g].forEach((b, i) => {
+    const PER_TIER = 3;
+    shelfStock[g].slice(0, SHELF_CAP).forEach((b, i) => {
       const tier = Math.floor(i / PER_TIER), slot = i % PER_TIER;
-      if (tier >= tiers) return;
       const surfY = s.y + (tier + 1) * tierH + (tier === tiers - 1 ? 3 : 0);                  // standing surface
-      const bh = 30 + ((i * 37) % 8), bw = 14;
-      const bx = s.x + 14 + slot * 23;
+      const bh = 34 + ((i * 37) % 8), bw = 42;
+      const slotW = s.w / PER_TIER;
+      const bx = s.x + slot * slotW + (slotW - bw) / 2;
       ctx.fillStyle = b.special ? '#d4af37' : SPINE_SHADES[g][i % SPINE_SHADES[g].length];
       ctx.fillRect(bx, surfY - bh, bw, bh);
-      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(bx, surfY - bh + 5, bw, 2);
-      if (b.special) { ctx.fillStyle = '#fff3b0'; ctx.font = '10px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', bx + bw / 2, surfY - bh + 18); }
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(bx, surfY - bh + 6, bw, 2.6);
+      ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(bx, surfY - 9, bw, 2.2);
+      if (b.special) { ctx.fillStyle = '#fff3b0'; ctx.font = '13px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', bx + bw / 2, surfY - bh + 22); }
     });
     // hanging sign
     ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.beginPath();
