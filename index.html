@@ -17,6 +17,18 @@
   .panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
            background:#241a10; border:2px solid #e8c87a; border-radius:10px; padding:20px 24px;
            min-width:340px; max-width:92%; box-shadow:0 10px 40px rgba(0,0,0,.6); display:none; z-index:5; }
+  #closeOverlay { position:absolute; inset:0; background:rgba(24,16,8,.62); z-index:4;
+    display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; }
+  #closeOverlay .big { font-size:44px; color:#f3e9d2; font-family:Georgia,serif; text-shadow:0 2px 10px #000; }
+  #closeOverlay .sub { font-size:17px; color:#d8c9a3; margin-top:8px; font-style:italic; }
+  .upcards { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:10px 0; }
+  .upcard { background:#2b1f12; border:1.5px solid #8a6d3f; border-radius:12px; width:204px; padding:10px 11px; text-align:center; }
+  .upcard.owned { border-color:#7fae5a; opacity:.85; }
+  .upcard h3 { margin:8px 0 4px; font-size:16.5px; color:#f3e9d2; }
+  .upcard p { margin:0 0 8px; font-size:13px; color:#cbbd97; line-height:1.32; min-height:52px; }
+  .upcard .icon { height:52px; display:flex; align-items:center; justify-content:center; }
+  #upgradesPanel { max-height:96%; overflow-y:auto; padding:14px 18px; }
+  #upgradesPanel h2 { margin:0 0 2px; font-size:23px; }
   .panel h2 { color:#e8c87a; font-size:18px; margin-bottom:10px; }
   .panel p { margin:5px 0; font-size:15px; }
   .panel .row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center; }
@@ -84,6 +96,34 @@
     <div class="row"><button class="primary" id="restockYes">Deal</button><button id="restockNo">No thanks</button></div>
   </div>
 
+  <div id="closeOverlay"><div class="big" id="closeTitle">🌙 Day 1 complete</div><div class="sub">You lock up, sweep the floor, and count the till…</div></div>
+
+  <div class="panel" id="upgradesPanel" style="display:none; width:700px; max-width:94%;">
+    <h2>🔧 Night Market — Upgrades</h2>
+    <p style="text-align:center; margin:2px 0 4px;">You have <b id="upCoins">0</b> <span class="coin"></span> · Anything you buy applies from tomorrow.</p>
+    <div class="upcards">
+      <div class="upcard" id="upCard-supplier">
+        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="14" y="34" width="32" height="18" rx="3" fill="#7a3b8c"/><rect x="26" y="24" width="8" height="12" fill="#e8b48c"/><circle cx="30" cy="19" r="7.5" fill="#e8b48c"/><rect x="17" y="13.5" width="26" height="3.6" rx="1.8" fill="#232028"/><rect x="23" y="5" width="14" height="9" rx="2" fill="#232028"/><rect x="21.5" y="18" width="17" height="4" rx="2" fill="#14100c"/><rect x="41" y="36" width="11" height="14" rx="2" fill="#ffd94a" transform="rotate(14 46 43)"/><text x="46.5" y="46.5" font-size="9" font-weight="bold" fill="#7a5410" text-anchor="middle" transform="rotate(14 46 43)">$</text></svg></div>
+        <h3>Sleazy Book Supplier</h3>
+        <p>Knows a guy. When your shelves run completely dry, he slinks in and sells you books — at full retail price. No haggling him down.</p>
+        <button class="primary upbuy" data-up="supplier">Buy — 50</button>
+      </div>
+      <div class="upcard" id="upCard-appraisal">
+        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><path d="M14 44 L30 37 L46 44 L46 18 L30 11 L14 18 Z" fill="#8c2f39"/><path d="M30 11 L30 37" stroke="#f3e9d2" stroke-width="2"/><path d="M18 20 L26 17 M18 27 L26 24 M34 17 L42 20 M34 24 L42 27" stroke="#f3e9d2" stroke-width="1.6"/><circle cx="38" cy="38" r="11" fill="rgba(120,200,220,.28)" stroke="#3d7ea6" stroke-width="3"/><line x1="46" y1="46" x2="55" y2="55" stroke="#3d7ea6" stroke-width="4.5" stroke-linecap="round"/></svg></div>
+        <h3>Book Appraisal Course</h3>
+        <p>A correspondence course in grading books. Your appraisal ranges come in about twice as tight — fewer nasty surprises at the reveal.</p>
+        <button class="primary upbuy" data-up="appraisal">Buy — 50</button>
+      </div>
+      <div class="upcard" id="upCard-bookcase">
+        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="12" y="6" width="36" height="48" fill="#7d5a30"/><rect x="15" y="9" width="30" height="42" fill="#43301d"/><line x1="15" y1="23" x2="45" y2="23" stroke="#96733d" stroke-width="2.6"/><line x1="15" y1="37" x2="45" y2="37" stroke="#96733d" stroke-width="2.6"/><rect x="18" y="13" width="5" height="10" fill="#4f7d4a"/><rect x="24" y="12" width="5" height="11" fill="#7a9e43"/><rect x="33" y="13" width="5" height="10" fill="#5a8c6e"/><rect x="20" y="27" width="5" height="10" fill="#8a5fa0"/><rect x="26" y="26" width="5" height="11" fill="#6a4a8c"/><rect x="36" y="27" width="5" height="10" fill="#a06ab0"/><rect x="19" y="41" width="5" height="10" fill="#4f7d4a"/><rect x="30" y="40" width="5" height="11" fill="#8a5fa0"/><rect x="37" y="41" width="5" height="10" fill="#7a9e43"/></svg></div>
+        <h3>Bookcase Upgrade</h3>
+        <p>Proper three-tier bookcases, built overnight. Each case holds <b>9 books</b> instead of 6 — room to breathe, room to stock.</p>
+        <button class="primary upbuy" data-up="bookcase">Buy — 50</button>
+      </div>
+    </div>
+    <div class="row"><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
+  </div>
+
   <div class="panel" id="rentPanel" style="display:none;">
     <h2>🚪 A knock at the door…</h2>
     <p id="rentBody"></p>
@@ -131,12 +171,14 @@ const DAY_LEN = 210;                 // one day = 3 minutes 30 seconds
 const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4' };
 const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction' };
 const CARRY_MAX = 4;
-const SHELF_CAP = 6;                 // max books per shelf
+let SHELF_CAP = 6;                   // max books per shelf (9 with the bookcase upgrade)
 const COIN = '<span class="coin"></span>';
 
 // ---------- Layout ----------
 const W = 960, H = 600;
-const SHELF_TIERS = 2;               // each bookcase: 2 tiers × 3 books = 6
+let SHELF_TIERS = 2;                 // tiers per bookcase (3 with the upgrade)
+let upgrades = { supplier: false, appraisal: false, bookcase: false };
+let supplierUsedToday = false;
 // Floor plan per Roy's sketch (2026-10-16): bookcases in the two TOP CORNERS,
 // counters along the bottom, door at the bottom-left. Room for SIX more
 // bookshelves after these two: two more on the back wall, four as islands.
@@ -184,7 +226,7 @@ function makeBook(genre, special) {
   return { genre, special: !!special, value, sellPrice: value, cost: 0 };   // cost = what we paid (0 for opening stock)
 }
 function appraisalRange(book) {
-  const spread = book.special ? 0.45 : 0.35;   // specials are the bigger gamble
+  const spread = (book.special ? 0.45 : 0.35) * (upgrades.appraisal ? 0.5 : 1);   // appraisal course halves it
   return [Math.max(1, Math.round(book.value * (1 - spread))), Math.round(book.value * (1 + spread))];
 }
 function rnd(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
@@ -287,6 +329,7 @@ function reset() {
   player = { x: 480, y: 385, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
+  upgrades = { supplier: false, appraisal: false, bookcase: false }; applyUpgrades();
   if (!storySeen) startIntro();
 }
 
@@ -374,7 +417,7 @@ const $ = id => document.getElementById(id);
 function openHaggle(seller) {
   haggle = { seller, offer: Math.max(1, Math.floor(seller.ask * 0.6)) };
   seller.state = 'haggle';
-  $('haggleTitle').textContent = 'Haggle — ' + GENRE_NAME[seller.book.genre] + (seller.book.special ? ' ✦ SPECIAL' : '');
+  $('haggleTitle').textContent = (seller.sleazy ? '🕶️ Sleazy Supplier — ' : 'Haggle — ') + GENRE_NAME[seller.book.genre] + (seller.book.special ? ' ✦ SPECIAL' : '');
   $('haggleBook').innerHTML = 'Book: <span class="swatch" style="background:' + GENRE_COLOR[seller.book.genre] + '"></span>' +
     GENRE_NAME[seller.book.genre] + (seller.book.special ? ' (special edition!)' : '') +
     '';
@@ -386,7 +429,7 @@ function openHaggle(seller) {
   slider.style.background = 'linear-gradient(90deg, #5a4326 0%, #5a4326 ' + pLo + '%, #35c4b5 ' + pLo + '%, #35c4b5 ' + pHi + '%, #5a4326 ' + pHi + '%, #5a4326 100%)';
   $('haggleRange').textContent = lo + ' – ' + hi + ' coins';
   $('haggleAsk').textContent = seller.ask;
-  $('haggleMsg').textContent = '';
+  $('haggleMsg').textContent = seller.sleazy ? '“Price is retail, friend. Take it or leave it.”' : '';
   syncOffer();
   $('hagglePanel').style.display = 'block';
 }
@@ -553,11 +596,29 @@ function collide(p) {
   p.x = Math.max(20, Math.min(W - 20, p.x)); p.y = Math.max(20, Math.min(H - 14, p.y));
 }
 
+// The Sleazy Supplier (upgrade): once a day, the moment BOTH shelves are
+// completely empty, he slinks in as a seller whose price is fixed at retail —
+// floor = ask = the book's sell price. Desperation stock, zero margin.
+function spawnSupplier() {
+  supplierUsedToday = true;
+  const genre = Math.random() < 0.5 ? 'green' : 'purple';
+  const c = { id: cid++, x: DOOR.x + rf(-14, 14), y: DOOR.y, genre,
+              patience: 100, state: 'enter', book: null, queueIdx: 0, sleazy: true };
+  c.look = { skin: '#e0ac69', hair: '#1c1c22', hairStyle: 1, coat: '#7a3b8c', flip: false };
+  c.kind = 'seller';
+  c.book = makeBook(genre, false);
+  c.floor = c.book.value;
+  c.ask = c.book.value;
+  customers.push(c);
+  flash('🕶️ A sleazy supplier slinks in…');
+}
+
 function update(dt) {
   if (!running || over) return;
   dayT += dt;
   if (dayT >= DAY_LEN) { endDay(); return; }
   spawnT -= dt;
+  if (upgrades.supplier && !supplierUsedToday && shelfStock.green.length + shelfStock.purple.length === 0) spawnSupplier();
   if (spawnT <= 0) { spawnCustomer(); spawnT = Math.max(4.5, 8.5 - dayT * 0.012) * (25 / Math.max(reputation, 8)) * rf(0.8, 1.2); }   // slowdown floored at ~3x
 
   // player movement
@@ -644,8 +705,15 @@ function refreshHUD() {
 // Multi-day runs: the shop's state carries over. At closing, everything the
 // shop owns goes back on a shelf — books in your arms and books buyers are
 // still holding. Shelf first, then your arms; whatever fits nowhere is wasted.
+function applyUpgrades() {
+  SHELF_CAP = upgrades.bookcase ? 9 : 6;
+  SHELF_TIERS = upgrades.bookcase ? 3 : 2;
+  for (const g of ['green', 'purple']) SHELF[g].h = upgrades.bookcase ? 174 : 116;
+  supplierUsedToday = false;
+}
 function startNextDay() {
   day++;
+  applyUpgrades();
   reputation++;                        // +1 every day, regardless (Roy)
   customers = []; dayT = 0; spawnT = 1.2; over = false; haggle = null;
   stats = freshStats();
@@ -653,18 +721,33 @@ function startNextDay() {
   startNetWorth = coins + shelfStock.green.concat(shelfStock.purple, carry).reduce((a, b) => a + (b.cost || 0), 0);
   player.x = 480; player.y = 385; player.target = null;
   $('tallyPanel').style.display = 'none';
+  $('upgradesPanel').style.display = 'none';
   $('hagglePanel').style.display = 'none';
   running = true; musicStart();
   refreshHUD();
 }
 
+function playJingle() {
+  // A gentle 3-second closing jingle — the shop winding down for the night.
+  if (!Music.ctx || Music.ctx.state !== 'running' || !Music.on) return;
+  const t = Music.ctx.currentTime;
+  const seq = [ [523.25, 0], [587.33, 0.32], [659.25, 0.64], [783.99, 0.96], [659.25, 1.32], [587.33, 1.64], [523.25, 1.96], [440.0, 2.28] ];
+  for (const [f, dt2] of seq) pluck(f, t + dt2, 0.55, 0.05, 'sine');
+  pluck(261.63, t + 2.28, 1.0, 0.04, 'sine'); pluck(329.63, t + 2.28, 1.0, 0.035, 'sine'); pluck(392.0, t + 2.28, 1.2, 0.04, 'sine');
+}
+let closingTimer = null;
+function showClosing(next) {
+  // Pause on a closing message + jingle for ~3s before ANY night screen —
+  // the jump straight to the Mysterious Man was jarring (Roy).
+  $('closeTitle').textContent = '🌙 Day ' + day + ' complete';
+  $('closeOverlay').style.display = 'flex';
+  playJingle();
+  if (closingTimer) clearTimeout(closingTimer);
+  closingTimer = setTimeout(() => { $('closeOverlay').style.display = 'none'; next(); }, 3000);
+}
 function endDay() {
   over = true; running = false;
   refreshHUD();   // settle the HUD NOW — a last-second sale/purchase otherwise leaves it stale vs. the rent check
-  if (Music.ctx && Music.ctx.state === 'running' && Music.on) {   // closing chime
-    const t = Music.ctx.currentTime;
-    pluck(659.25, t, 0.7, 0.045, 'sine'); pluck(523.25, t + 0.22, 0.8, 0.045, 'sine'); pluck(392.0, t + 0.44, 1.1, 0.05, 'sine');
-  }
   if (haggle) closeHaggle('decline');
   $('hagglePanel').style.display = 'none';
   const pool = carry.slice();
@@ -675,20 +758,20 @@ function endDay() {
     else if (carry.length < CARRY_MAX) carry.push(b);
     else { stats.wasted++; stats.wastedValue += b.sellPrice; }
   }
-  // The Mysterious Man's restock offer: if the shelves end the day less than
-  // 2/3 full, he offers to fill every empty slot at 30 a book — books that
-  // sell for 25. He appears BEFORE the tally so the numbers include the deal.
+  // The Mysterious Man's restock offer: if even ONE slot is empty at close,
+  // he offers to fill every empty slot at 30 a book — books that sell for 25.
+  // He appears BEFORE the tally so the numbers include the deal.
   const shelfTotal = shelfStock.green.length + shelfStock.purple.length;
   const emptySlots = (SHELF_CAP * 2) - shelfTotal;
-  if (shelfTotal < (SHELF_CAP * 2) * 2 / 3 && emptySlots > 0) {
+  if (emptySlots > 0) {   // he ALWAYS offers if even one slot is empty (Roy)
     pendingRestock = { empty: emptySlots, total: emptySlots * 30 };
     $('restockBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “Psst. Shelves are looking bare — <b>' + emptySlots + ' empty spaces</b>. I\'ll fill every one tonight: <b>30</b> ' + COIN + ' a book, and they sell for <b>25</b>. That\'s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”';
     $('restockYes').textContent = coins >= pendingRestock.total ? 'Deal — pay ' + pendingRestock.total : 'You can\'t afford ' + pendingRestock.total;
     $('restockYes').disabled = coins < pendingRestock.total;
-    $('restockPanel').style.display = 'block';
+    showClosing(() => { $('restockPanel').style.display = 'block'; });
     return;
   }
-  proceedAfterRestock();
+  showClosing(proceedAfterRestock);
 }
 
 let pendingRestock = null;
@@ -803,7 +886,7 @@ function composeTally() {
     'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b><br>' +
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
     (stats.restocked ? '🧥 The Mysterious Man restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
-    (stats.restockDeclined ? '🧥 You turned down the Mysterious Man\'s restock (' + stats.restockDeclined + ' empty spaces left bare)<br>' : '') +
+    (stats.restockDeclined ? '🧥 You turned down the Mysterious Man\'s restock (' + stats.restockDeclined + ' empty space' + (stats.restockDeclined === 1 ? '' : 's') + ' left bare)<br>' : '') +
     (stats.rentPaid ? '🧥 Rent to the Mysterious Man: <b>−' + stats.rentPaid + ' 🪙</b> cash<br>' : '') +
     'Wasted at closing (no shelf or arm space): <b>' + stats.wasted + '</b> books' + (stats.wasted ? ' worth <b>' + stats.wastedValue + ' 🪙</b> at sale value' : '') + '<br>' +
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
@@ -814,10 +897,30 @@ function composeTally() {
     '💰 <b>Net worth: ' + netWorth + ' 🪙</b> (opened at ' + startNetWorth + ') — change: <b style="color:' + (nwDelta >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (nwDelta >= 0 ? '+' : '') + nwDelta + ' 🪙</b><br>' +
     'Cash-only day result: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
   $('tallyBody').innerHTML = $('tallyBody').innerHTML.split('🪙').join(COIN);
-  $('restartBtn').textContent = 'Open Day ' + (day + 1) + ' ▸';
+  $('restartBtn').textContent = 'Night market ▸';
   $('tallyPanel').style.display = 'block';
 }
-$('restartBtn').addEventListener('click', startNextDay);
+$('restartBtn').addEventListener('click', () => {
+  $('tallyPanel').style.display = 'none';
+  renderUpgrades();
+  $('upgradesPanel').style.display = 'block';
+});
+$('nextDayBtn').addEventListener('click', startNextDay);
+function renderUpgrades() {
+  $('upCoins').textContent = coins;
+  document.querySelectorAll('.upbuy').forEach(btn => {
+    const key = btn.dataset.up;
+    if (upgrades[key]) { btn.textContent = 'Owned ✓'; btn.disabled = true; $('upCard-' + key).classList.add('owned'); }
+    else { btn.textContent = 'Buy — 50'; btn.disabled = coins < 50; $('upCard-' + key).classList.remove('owned'); }
+  });
+}
+document.querySelectorAll('.upbuy').forEach(btn => btn.addEventListener('click', () => {
+  const key = btn.dataset.up;
+  if (upgrades[key] || coins < 50) return;
+  coins -= 50; upgrades[key] = true; refreshHUD();
+  sfx('buy');
+  renderUpgrades();
+}));
 $('introBar').addEventListener('click', () => { if (endingStep >= 0) advanceEnding(); else advanceIntro(); });
 
 // ---------- Draw ----------
@@ -866,6 +969,10 @@ function drawCustomer(c) {
   ctx.fillStyle = '#26221f';
   ctx.fillRect(x - 3.4, hy - 0.6, 1.8, 1.8);
   ctx.fillRect(x + 1.6, hy - 0.6, 1.8, 1.8);
+  if (c.sleazy) {   // shades + gold chain for the supplier
+    ctx.fillStyle = '#14100c'; ctx.fillRect(x - 6.4, hy - 1.8, 12.8, 3.6);
+    ctx.fillStyle = '#ffd94a'; ctx.fillRect(x - 1, y + 12.5, 2, 2);
+  }
   ctx.restore();
 }
 function drawBookseller() {
