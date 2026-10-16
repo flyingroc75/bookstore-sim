@@ -38,10 +38,13 @@
                box-shadow:0 4px 16px rgba(0,0,0,.55); }
   #actionBtn:hover { background:#d18f47; }
   .swatch { display:inline-block; width:12px; height:16px; border-radius:2px; vertical-align:-2px; margin-right:5px; border:1px solid rgba(0,0,0,.4); }
-  #haggleReveal { display:none; margin:14px auto 2px; padding:12px 10px; border-radius:10px; max-width:320px;
-                  background:#1d150c; border:2px solid #ffd98a; font-size:16.5px; line-height:1.5; }
-  #haggleReveal.pop { display:block; animation:popIn .45s ease-out; }
+  #haggleReveal { display:none; position:absolute; inset:0; border-radius:10px; background:rgba(10,6,3,.72);
+                  align-items:center; justify-content:center; z-index:6; }
+  #haggleReveal.pop { display:flex; animation:fadeIn .25s ease-out; }
+  #haggleReveal .card { background:#1d150c; border:2px solid #ffd98a; border-radius:10px; padding:16px 20px;
+                        text-align:center; animation:popIn .45s ease-out; font-size:16.5px; line-height:1.5; max-width:86%; }
   #haggleReveal .big { font-size:27px; font-weight:bold; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
   @keyframes popIn { 0% { transform:scale(.6); opacity:0; } 60% { transform:scale(1.08); opacity:1; } 100% { transform:scale(1); } }
 </style>
 </head>
@@ -196,8 +199,10 @@ function nearStation() {
   }
   return null;
 }
-function frontSeller() { const q = buyQueue(); return q.length ? q[0] : null; }
-function frontBuyer()  { const q = sellQueue(); return q.length ? q[0] : null; }
+// Only the customer who has actually ARRIVED at the front counter spot can be served.
+function atCounter(c, counter) { const p = queuePos(counter, 0); return Math.hypot(c.x - p.x, c.y - p.y) < 8; }
+function frontSeller() { const q = buyQueue(); if (!q.length) return null; return (q[0].state === 'haggle' || atCounter(q[0], BUY_COUNTER)) ? q[0] : null; }
+function frontBuyer()  { const q = sellQueue(); if (!q.length) return null; return atCounter(q[0], SELL_COUNTER) ? q[0] : null; }
 
 function doInteract() {
   if (!running || over || haggle) return;
@@ -251,7 +256,7 @@ $('offerSlider').addEventListener('input', syncOffer);
 function closeHaggle(result) {
   const s = haggle.seller;
   if (result === 'deal') { s.state = 'leaveHappy'; }
-  else if (result === 'decline') { s.state = 'leaveMad'; stats.turnedAway++; }
+  else if (result === 'decline') { if (haggle.dealt) s.state = 'leaveHappy'; else { s.state = 'leaveMad'; stats.turnedAway++; } }
   haggle = null;
   $('hagglePanel').style.display = 'none';
 }
@@ -277,30 +282,34 @@ $('offerBtn').addEventListener('click', () => {
 });
 $('declineBtn').addEventListener('click', () => { if (haggle) closeHaggle('decline'); });
 
-// After a deal: reveal the book's ACTUAL sale value with a little count-up,
-// so the player learns on the spot whether they overpaid.
+// After a deal: the haggle panel greys out under an overlay card revealing the
+// book's ACTUAL sale value (count-up), with a Continue button to dismiss it.
+let revealTimer = null;
 function showReveal(book, paid) {
-  for (const id of ['offerLine', 'offerSlider', 'haggleButtons', 'haggleMsg']) $(id).style.display = 'none';
   const margin = book.sellPrice - paid;
   const rev = $('haggleReveal');
-  rev.innerHTML = '🤝 Deal! You paid <b>' + paid + '</b> 🪙<br>The book actually sells for<br>' +
+  rev.innerHTML = '<div class="card">🤝 Deal! You paid <b>' + paid + '</b> 🪙<br>The book actually sells for<br>' +
     '<span class="big" id="revealVal">0</span> 🪙<br>' +
     '<span style="color:' + (margin >= 0 ? '#8fe08a' : '#e08a8a') + '; font-weight:bold;">' +
-    (margin >= 0 ? 'Margin if it sells: +' + margin + ' 🎉' : 'You overpaid by ' + (-margin) + ' 😬') + '</span>';
+    (margin >= 0 ? 'Margin if it sells: +' + margin + ' 🎉' : 'You overpaid by ' + (-margin) + ' 😬') + '</span><br>' +
+    '<button class="primary" id="revealOk" style="margin-top:10px;">Continue</button></div>';
   rev.classList.add('pop');
+  $('revealOk').addEventListener('click', closeReveal);
   const t0 = performance.now();
   const tick = () => {
-    const el = $('revealVal'); if (!el) return;
+    const el = document.getElementById('revealVal'); if (!el) return;
     const p = Math.min(1, (performance.now() - t0) / 750);
     el.textContent = Math.round(book.sellPrice * (1 - Math.pow(1 - p, 3)));
     if (p < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
-  setTimeout(() => {
-    rev.classList.remove('pop'); rev.style.display = 'none';
-    for (const id of ['offerLine', 'offerSlider', 'haggleButtons', 'haggleMsg']) $(id).style.display = '';
-    if (haggle && haggle.dealt) { flash('Bought for ' + paid + ' 🪙'); closeHaggle('deal'); }
-  }, 2100);
+  revealTimer = setTimeout(closeReveal, 3200);
+}
+function closeReveal() {
+  if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+  const rev = $('haggleReveal');
+  rev.classList.remove('pop'); rev.innerHTML = '';
+  if (haggle && haggle.dealt) { flash('Bought for ' + haggle.seller.book.cost + ' 🪙'); closeHaggle('deal'); }
 }
 
 // ---------- Music (generative, WebAudio — no audio files) ----------
