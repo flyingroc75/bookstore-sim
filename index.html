@@ -240,8 +240,8 @@ function reset() {
   // Starting stock is priced flat: every opening book sells for 25, so the
   // run always opens at 500 coins + 12 x 25 = 800 net worth.
   for (let i = 0; i < 6; i++) {
-    const g = makeBook('green', false); g.sellPrice = 25; shelfStock.green.push(g);
-    const p = makeBook('purple', false); p.sellPrice = 25; shelfStock.purple.push(p);
+    const g = makeBook('green', false); g.sellPrice = 25; g.cost = 25; shelfStock.green.push(g);
+    const p = makeBook('purple', false); p.sellPrice = 25; p.cost = 25; shelfStock.purple.push(p);
   }
   carry = [];
   customers = [];
@@ -624,6 +624,10 @@ function startNextDay() {
 
 function endDay() {
   over = true; running = false;
+  if (Music.ctx && Music.ctx.state === 'running' && Music.on) {   // closing chime
+    const t = Music.ctx.currentTime;
+    pluck(659.25, t, 0.7, 0.045, 'sine'); pluck(523.25, t + 0.22, 0.8, 0.045, 'sine'); pluck(392.0, t + 0.44, 1.1, 0.05, 'sine');
+  }
   if (haggle) closeHaggle('decline');
   $('hagglePanel').style.display = 'none';
   const pool = carry.slice();
@@ -676,7 +680,7 @@ function composeTally() {
   const netWorth = coins + invValue, nwDelta = netWorth - startNetWorth;
   const soldProfit = stats.revenue - stats.costOfSold;
   $('tallyBody').innerHTML =
-    '🌙 <b>Day ' + day + ' complete.</b> The shop keeps everything — coins, stock, and what\'s in your arms — into Day ' + (day + 1) + '.<br><br>' +
+    '🌙 <b>Day ' + day + ' complete.</b><br><br>' +
     'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b> (cost of those books: ' + stats.costOfSold + ' → profit on sold books <b style="color:' + (soldProfit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (soldProfit >= 0 ? '+' : '') + soldProfit + '</b>)<br>' +
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
     (stats.restocked ? '🧥 The Mysterious Man restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
