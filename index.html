@@ -42,6 +42,7 @@
   <span><span class="swatch" style="background:#3fae5a"></span>Non-fiction shelf: <b id="shelfG">0</b></span>
   <span><span class="swatch" style="background:#8b4fc4"></span>Fiction shelf: <b id="shelfP">0</b></span>
   <span>🎒 Carrying: <b id="carry">—</b></span>
+  <span><button id="musicBtn" style="padding:4px 10px; font-size:13px;">🔊 Music on</button></span>
 </div>
 <div id="wrap">
   <canvas id="game" width="960" height="600"></canvas>
@@ -199,6 +200,7 @@ function doInteract() {
       coins += b.book.sellPrice; stats.sold++; stats.revenue += b.book.sellPrice;
       b.state = 'leaveHappy';
       flash('+' + b.book.sellPrice + ' 🪙');
+      sfx('sale');
     }
   } else if (st && st.startsWith('shelf-')) {
     const g = st.slice(6);
@@ -243,6 +245,7 @@ $('offerBtn').addEventListener('click', () => {
     coins -= offer; stats.bought++; stats.spent += offer;
     carry.push(s.book);
     flash('Bought for ' + offer + ' 🪙');
+    sfx('buy');
     closeHaggle('deal');
   } else {
     s.patience -= 10;
@@ -253,6 +256,48 @@ $('offerBtn').addEventListener('click', () => {
   }
 });
 $('declineBtn').addEventListener('click', () => { if (haggle) closeHaggle('decline'); });
+
+// ---------- Music (generative, WebAudio — no audio files) ----------
+const Music = { ctx: null, on: true, step: 0, nextTime: 0, timer: null };
+const CHORDS = [ [261.63, 329.63, 392.00], [220.00, 261.63, 329.63], [174.61, 220.00, 261.63], [196.00, 246.94, 293.66] ]; // C – Am – F – G
+const PENTA = [523.25, 587.33, 659.25, 783.99, 880.00];
+function pluck(freq, t, dur, vol, type) {
+  const o = Music.ctx.createOscillator(), g = Music.ctx.createGain();
+  o.type = type || 'triangle'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(Music.ctx.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+function scheduleStep(step, t) {
+  const chord = CHORDS[Math.floor(step / 8) % CHORDS.length], beat = step % 8;
+  if (beat === 0) pluck(chord[0] / 2, t, 1.6, 0.05, 'sine');
+  pluck(chord[beat % 3], t, 0.7, 0.032);
+  if (beat % 2 === 0 && Math.random() < 0.62) pluck(PENTA[rnd(0, PENTA.length - 1)], t, 0.55, 0.048);
+  if (beat === 6 && Math.random() < 0.3) pluck(PENTA[rnd(0, PENTA.length - 1)], t, 0.4, 0.028);
+}
+function musicStart() {
+  if (!Music.ctx) { try { Music.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
+  if (Music.ctx.state === 'suspended') Music.ctx.resume();
+  if (Music.timer) return;
+  Music.nextTime = Music.ctx.currentTime + 0.06;
+  Music.timer = setInterval(() => {
+    if (!Music.on) return;
+    while (Music.nextTime < Music.ctx.currentTime + 0.3) { scheduleStep(Music.step, Music.nextTime); Music.step++; Music.nextTime += 0.235; }
+  }, 110);
+}
+function sfx(kind) {
+  if (!Music.ctx || !Music.on) return;
+  const t = Music.ctx.currentTime;
+  if (kind === 'sale') { pluck(1318.5, t, 0.24, 0.06, 'square'); pluck(1568.0, t + 0.07, 0.3, 0.05, 'square'); }
+  else if (kind === 'buy') { pluck(392.0, t, 0.22, 0.045); pluck(329.6, t + 0.06, 0.26, 0.04); }
+}
+$('musicBtn').addEventListener('click', () => {
+  Music.on = !Music.on;
+  $('musicBtn').textContent = Music.on ? '🔊 Music on' : '🔇 Music off';
+  if (Music.on) musicStart();
+});
 
 // ---------- Flash message ----------
 let flashTxt = '', flashT = 0;
@@ -395,7 +440,7 @@ function endDay() {
   $('tallyPanel').style.display = 'block';
 }
 $('restartBtn').addEventListener('click', () => { reset(); $('startPanel').style.display = 'block'; });
-$('startBtn').addEventListener('click', () => { $('startPanel').style.display = 'none'; running = true; });
+$('startBtn').addEventListener('click', () => { $('startPanel').style.display = 'none'; running = true; musicStart(); });
 
 // ---------- Draw ----------
 function drawCustomer(c) {
@@ -505,27 +550,81 @@ function drawBook(x, y, genre, special, s) {
   ctx.fillRect(x - 6 * s, y - 2 * s, 12 * s, 2 * s);
   if (special) { ctx.fillStyle = '#ffd700'; ctx.font = (13 * s) + 'px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', x, y - 12 * s); }
 }
+const SPINE_SHADES = {
+  green:  ['#2e7d43', '#3fae5a', '#57bd74', '#2c6e3e', '#6fbf5e', '#47855a'],
+  purple: ['#6d359e', '#8b4fc4', '#a06fd0', '#7c46b0', '#9668c9', '#5d2f8a']
+};
 function draw() {
   ctx.clearRect(0, 0, W, H);
-  // floor
-  ctx.fillStyle = '#543e27'; ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = 'rgba(0,0,0,.08)';
-  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-  // shelves
+  // wall (upper) + floor (lower)
+  ctx.fillStyle = '#5d5142'; ctx.fillRect(0, 0, W, 148);
+  ctx.fillStyle = '#6b5b45'; ctx.fillRect(0, 140, W, 8);           // wainscot rail
+  ctx.fillStyle = '#543e27'; ctx.fillRect(0, 148, W, H - 148);
+  ctx.strokeStyle = 'rgba(0,0,0,.10)';
+  for (let y = 168; y < H; y += 26) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  for (let x = 30; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 148); ctx.lineTo(x, H); ctx.stroke(); }
+  // rug between the counters
+  ctx.fillStyle = '#74343a'; ctx.fillRect(392, 296, 176, 118);
+  ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(400, 304, 160, 102); ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(201,163,90,.5)'; ctx.strokeRect(412, 316, 136, 78);
+  // window between the shelves, warm evening light
+  ctx.fillStyle = '#2f2a33'; ctx.fillRect(446, 38, 68, 84);
+  ctx.fillStyle = '#e8b96a'; ctx.fillRect(450, 42, 60, 76);
+  ctx.fillStyle = '#d99e4e'; ctx.beginPath(); ctx.moveTo(450, 118); ctx.lineTo(480, 60); ctx.lineTo(510, 118); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#2f2a33'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(480, 42); ctx.lineTo(480, 118); ctx.moveTo(450, 80); ctx.lineTo(510, 80); ctx.stroke(); ctx.lineWidth = 1;
+  ctx.fillStyle = '#74343a'; ctx.fillRect(442, 34, 76, 7);          // curtain bar valance
+  // shelves — proper bookcases
   for (const g of ['green', 'purple']) {
     const s = SHELF[g];
-    ctx.fillStyle = '#6e4f2a'; ctx.fillRect(s.x, s.y, s.w, s.h);
-    ctx.fillStyle = GENRE_COLOR[g]; ctx.fillRect(s.x, s.y, s.w, 8);
-    ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 15px Georgia'; ctx.textAlign = 'center';
-    ctx.fillText(GENRE_NAME[g].toUpperCase() + '  (' + shelfStock[g].length + ')', s.x + s.w / 2, s.y + 24);
-    shelfStock[g].slice(0, 22).forEach((b, i) => drawBook(s.x + 22 + i * 13.2, s.y + 40, g, b.special, 0.62));
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(s.x - 4, s.y + s.h + 6, s.w + 8, 8);   // shadow
+    ctx.fillStyle = '#43301d'; ctx.fillRect(s.x - 6, s.y - 6, s.w + 12, s.h + 12);          // back panel
+    ctx.fillStyle = '#7d5a30';
+    ctx.fillRect(s.x - 6, s.y - 6, s.w + 12, 6); ctx.fillRect(s.x - 6, s.y + s.h, s.w + 12, 6);   // top/bottom boards
+    ctx.fillRect(s.x - 6, s.y - 6, 6, s.h + 12); ctx.fillRect(s.x + s.w, s.y - 6, 6, s.h + 12);   // side posts
+    ctx.fillStyle = '#96733d'; ctx.fillRect(s.x, s.y + s.h - 8, s.w, 5);                          // shelf board
+    // book spines, varied heights & shades, gold for specials
+    shelfStock[g].slice(0, 22).forEach((b, i) => {
+      const bx = s.x + 12 + i * 13.6, bh = 24 + ((i * 37) % 9), bw = 9.6;
+      ctx.fillStyle = b.special ? '#d4af37' : SPINE_SHADES[g][i % SPINE_SHADES[g].length];
+      ctx.fillRect(bx, s.y + s.h - 8 - bh, bw, bh);
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(bx, s.y + s.h - 8 - bh + 4, bw, 1.8);
+      if (b.special) { ctx.fillStyle = '#fff3b0'; ctx.font = '9px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', bx + bw / 2, s.y + s.h - 14 - bh); }
+    });
+    // hanging sign
+    ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.beginPath();
+    ctx.moveTo(s.x + s.w / 2 - 34, s.y - 6); ctx.lineTo(s.x + s.w / 2 - 26, s.y - 20);
+    ctx.moveTo(s.x + s.w / 2 + 34, s.y - 6); ctx.lineTo(s.x + s.w / 2 + 26, s.y - 20); ctx.stroke();
+    ctx.fillStyle = '#33261a'; ctx.fillRect(s.x + s.w / 2 - 62, s.y - 34, 124, 17);
+    ctx.strokeStyle = GENRE_COLOR[g]; ctx.strokeRect(s.x + s.w / 2 - 62, s.y - 34, 124, 17);
+    ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 11.5px Georgia'; ctx.textAlign = 'center';
+    ctx.fillText(GENRE_NAME[g].toUpperCase() + ' (' + shelfStock[g].length + ')', s.x + s.w / 2, s.y - 21.5);
   }
-  // counters
-  for (const [c, label] of [[BUY_COUNTER, 'BUY COUNTER — haggle here'], [SELL_COUNTER, 'SELL COUNTER — ring up here']]) {
-    ctx.fillStyle = '#7a5a30'; ctx.fillRect(c.x, c.y, c.w, c.h);
-    ctx.fillStyle = '#96733d'; ctx.fillRect(c.x, c.y, c.w, 10);
-    ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 14px Georgia'; ctx.textAlign = 'center';
-    ctx.fillText(label, c.x + c.w / 2, c.y + 34);
+  // counters — panelled wood, countertop slab, props
+  for (const [c, label, isBuy] of [[BUY_COUNTER, 'WE BUY BOOKS', true], [SELL_COUNTER, 'CHECKOUT', false]]) {
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(c.x - 3, c.y + c.h + 4, c.w + 6, 7);
+    ctx.fillStyle = '#77552c'; ctx.fillRect(c.x, c.y, c.w, c.h);
+    ctx.fillStyle = '#9a7440'; ctx.fillRect(c.x - 6, c.y - 6, c.w + 12, 11);              // countertop
+    ctx.fillStyle = '#b78d4e'; ctx.fillRect(c.x - 6, c.y - 6, c.w + 12, 3);
+    ctx.strokeStyle = 'rgba(0,0,0,.28)';
+    for (let px = c.x + 18; px < c.x + c.w - 40; px += 56) ctx.strokeRect(px, c.y + 14, 42, c.h - 24);  // front panels
+    // front plaque
+    ctx.fillStyle = '#33261a'; ctx.fillRect(c.x + c.w / 2 - 58, c.y + 15, 116, 19);
+    ctx.strokeStyle = '#e8c87a'; ctx.strokeRect(c.x + c.w / 2 - 58, c.y + 15, 116, 19);
+    ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 12px Georgia'; ctx.textAlign = 'center';
+    ctx.fillText(label, c.x + c.w / 2, c.y + 28.5);
+    if (isBuy) { // little stack of books awaiting appraisal
+      drawBook(c.x + 34, c.y - 14, 'purple', false, 0.85);
+      drawBook(c.x + 47, c.y - 14, 'green', false, 0.8);
+      drawBook(c.x + 40, c.y - 26, 'green', false, 0.75);
+    } else {     // cash register + brass bell
+      ctx.fillStyle = '#3c3a38'; ctx.fillRect(c.x + c.w - 66, c.y - 26, 40, 21);
+      ctx.fillStyle = '#9fe870'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('$', c.x + c.w - 46, c.y - 12);
+      ctx.fillStyle = '#8f8c88'; ctx.fillRect(c.x + c.w - 60, c.y - 34, 28, 9);
+      ctx.fillStyle = '#e3c565'; ctx.beginPath(); ctx.arc(c.x + c.w - 96, c.y - 8, 6, Math.PI, 0); ctx.fill();
+      ctx.fillRect(c.x + c.w - 103, c.y - 8, 14, 2.6);
+    }
   }
   // door
   ctx.fillStyle = '#33261a'; ctx.fillRect(DOOR.x - 34, H - 14, 68, 14);
