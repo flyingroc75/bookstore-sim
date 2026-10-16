@@ -118,7 +118,7 @@
         <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><path d="M10 26 L34 16 L34 44 L10 34 Z" fill="#c4503c"/><rect x="6" y="25" width="5" height="10" rx="2" fill="#8c3527"/><path d="M16 35 L20 35 L22 47 L16 47 Z" fill="#6e4630"/><path d="M40 20 a14 14 0 0 1 0 20" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M45 15 a21 21 0 0 1 0 30" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/></svg></div>
         <h3>Marketing</h3>
         <p>A flyer run, a sandwich board out front, chalk arrows on the sidewalk. Word gets around: <b>+5 reputation</b>. Once per night.</p>
-        <button class="primary upbuy" data-up="marketing">Buy — 50</button>
+        <button class="primary upbuy" data-up="marketing">Buy — 20</button>
       </div>
     </div>
     <div class="row"><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
@@ -912,28 +912,30 @@ $('restartBtn').addEventListener('click', () => {
   $('upgradesPanel').style.display = 'block';
 });
 $('nextDayBtn').addEventListener('click', startNextDay);
+const UP_COST = { supplier: 50, appraisal: 50, marketing: 20 };
 function renderUpgrades() {
   $('upCoins').textContent = coins;
   document.querySelectorAll('.upbuy').forEach(btn => {
     const key = btn.dataset.up;
     if (key === 'marketing') {
-      btn.textContent = marketingTonight ? 'Running tonight ✓' : 'Buy — 50';
-      btn.disabled = marketingTonight || coins < 50;
+      btn.textContent = marketingTonight ? 'Running tonight ✓' : 'Buy — ' + UP_COST.marketing;
+      btn.disabled = marketingTonight || coins < UP_COST.marketing;
       $('upCard-marketing').classList.toggle('owned', marketingTonight);
     }
     else if (upgrades[key]) { btn.textContent = 'Owned ✓'; btn.disabled = true; $('upCard-' + key).classList.add('owned'); }
-    else { btn.textContent = 'Buy — 50'; btn.disabled = coins < 50; $('upCard-' + key).classList.remove('owned'); }
+    else { btn.textContent = 'Buy — ' + UP_COST[key]; btn.disabled = coins < UP_COST[key]; $('upCard-' + key).classList.remove('owned'); }
   });
 }
 document.querySelectorAll('.upbuy').forEach(btn => btn.addEventListener('click', () => {
   const key = btn.dataset.up;
-  if (coins < 50) return;
+  const cost = UP_COST[key];
+  if (coins < cost) return;
   if (key === 'marketing') {
     if (marketingTonight) return;
-    coins -= 50; marketingTonight = true; reputation += 5;   // word gets around
+    coins -= cost; marketingTonight = true; reputation += 5;   // word gets around
   } else {
     if (upgrades[key]) return;
-    coins -= 50; upgrades[key] = true;
+    coins -= cost; upgrades[key] = true;
   }
   refreshHUD(); sfx('buy');
   renderUpgrades();
