@@ -592,6 +592,7 @@ function refreshHUD() {
 // still holding. Shelf first, then your arms; whatever fits nowhere is wasted.
 function startNextDay() {
   day++;
+  reputation++;                        // +1 every day, regardless (Roy)
   customers = []; dayT = 0; spawnT = 1.2; over = false; haggle = null;
   stats = freshStats();
   dayStartCoins = coins;
