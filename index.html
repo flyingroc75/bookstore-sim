@@ -84,6 +84,30 @@
     <div class="row"><button class="primary" id="restockYes">Deal</button><button id="restockNo">No thanks</button></div>
   </div>
 
+  <div class="panel" id="rentPanel" style="display:none;">
+    <h2>🚪 A knock at the door…</h2>
+    <p id="rentBody"></p>
+    <div class="row"><button class="primary" id="rentPay">Pay the rent</button><button id="rentFace" style="display:none;">Face the music…</button></div>
+  </div>
+
+  <div class="panel" id="winPanel" style="display:none;">
+    <h2 id="winTitle">🎉 Survived week 1!</h2>
+    <p>Rent paid in cash. The Mysterious Man tips his hat and vanishes into the night — the shop is yours for another week.</p>
+    <div class="row"><button class="primary" id="winOk">Keep going ▸</button></div>
+  </div>
+
+  <div class="panel" id="bankruptPanel" style="display:none;">
+    <h2>💸 Bankrupt!</h2>
+    <p>You can't make the rent. The deed goes back to the Mysterious Man… unless. Unless <i>you</i> can find a buyer first.</p>
+    <div class="row"><button class="primary" id="bankruptOk">One last idea… ▸</button></div>
+  </div>
+
+  <div class="panel" id="endPanel" style="display:none;">
+    <h2>🔄 The cycle continues</h2>
+    <p>Somewhere, a well-meaning soul is about to have a very educational week.</p>
+    <div class="row"><button class="primary" id="startOverBtn">Start over</button></div>
+  </div>
+
   <div class="panel" id="tallyPanel">
     <h2>🌙 Closing Tally</h2>
     <p id="tallyBody"></p>
@@ -137,7 +161,7 @@ let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
 let day = 1, dayStartCoins = 500;
 let reputation = 25;                 // ⭐ start ~25; −1 per declined sale / patience walkout
 function repDown() { reputation = Math.max(1, reputation - 1); }
-function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0 }; }
+function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0, rentPaid: 0 }; }
 let stats, haggle; // haggle = { seller, offer }
 let startNetWorth = 0;
 let player;
@@ -208,7 +232,8 @@ function updateIntro(dt) {
     coinSpawnT -= dt;
     if (k < 1 && coinSpawnT <= 0) {
       coinSpawnT = 0.045;
-      coinParticles.push({ x: player.x + rf(-6, 6), y: player.y - 40, t: 0, dur: rf(0.45, 0.7), arc: rf(14, 30) });
+      const srcP = coinFrom || player;
+      coinParticles.push({ x: srcP.x + rf(-6, 6), y: srcP.y - 40, t: 0, dur: rf(0.45, 0.7), arc: rf(14, 30) });
     }
     // descending tick sounds as the total falls
     const bucket = Math.floor(introCoins / 300);
@@ -220,7 +245,7 @@ function updateIntro(dt) {
   }
   if (coinHold > 0) coinHold -= dt;
   // coin particles arc from the player to the landlord (or the door once he's gone)
-  const tgt = landlord ? { x: landlord.x, y: landlord.y - 34 } : { x: DOOR.x, y: DOOR.y - 30 };
+  const tgt = coinTo || (landlord ? { x: landlord.x, y: landlord.y - 34 } : { x: DOOR.x, y: DOOR.y - 30 });
   coinParticles = coinParticles.filter(p => {
     p.t += dt / p.dur;
     if (p.t >= 1) return false;
@@ -232,6 +257,7 @@ function updateIntro(dt) {
     if (moveToward(landlord, DOOR.x, DOOR.y + 24, 175, dt)) landlord = null;
   }
   if (introStep >= 0) refreshHUD();
+  updateEnding(dt);
 }
 
 function reset() {
@@ -491,6 +517,7 @@ addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 const canvas = $('game'), ctx = canvas.getContext('2d');
 let clickTarget = null;
 canvas.addEventListener('pointerdown', e => {
+  if (endingStep >= 0) { advanceEnding(); return; }
   if (introStep >= 0 && !storySeen) { advanceIntro(); return; }
   const r = canvas.getBoundingClientRect();
   clickTarget = { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
@@ -651,7 +678,7 @@ function endDay() {
     $('restockPanel').style.display = 'block';
     return;
   }
-  composeTally();
+  proceedAfterRestock();
 }
 
 let pendingRestock = null;
@@ -663,14 +690,86 @@ $('restockYes').addEventListener('click', () => {
     while (shelfStock[g].length < SHELF_CAP) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = 30; shelfStock[g].push(b); }
   pendingRestock = null;
   $('restockPanel').style.display = 'none';
-  composeTally();
+  proceedAfterRestock();
 });
 $('restockNo').addEventListener('click', () => {
   stats.restockDeclined = pendingRestock ? pendingRestock.empty : 0;
   pendingRestock = null;
   $('restockPanel').style.display = 'none';
-  composeTally();
+  proceedAfterRestock();
 });
+
+function proceedAfterRestock() {
+  if (day % 3 === 0) showRent(); else composeTally();
+}
+
+// ---------- Week's end: rent, and what happens if you can't pay ----------
+let confetti = [], endingStep = -1, endBuyer = null, playerLeaving = false;
+let coinFrom = null, coinTo = null, coinLabel = 'Y O U R   C O I N S';
+const ENDING_LINES = [
+  { who: 'YOU', line: 'Psst. Wanna buy a bookstore?' },
+  { who: 'UNSUSPECTING BUYER', line: "Oh boy! I've always wanted a bookstore!" },
+  { who: 'YOU', line: 'Deal.' },
+  { who: 'UNSUSPECTING BUYER', line: "…It's a bit run-down. And — wait, where did he go?" }
+];
+function showRent() {
+  $('rentBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “End of the week. Rent\'s due: <b>500</b> ' + COIN + '. Cash.”<br><br>You have <b>' + coins + '</b> ' + COIN + ' in the till.';
+  const canPay = coins >= 500;
+  $('rentPay').style.display = canPay ? '' : 'none';
+  $('rentPay').textContent = 'Pay 500 ' + 'rent';
+  $('rentFace').style.display = canPay ? 'none' : '';
+  $('rentPanel').style.display = 'block';
+}
+$('rentPay').addEventListener('click', () => {
+  coins -= 500; stats.rentPaid = 500;
+  $('rentPanel').style.display = 'none';
+  $('winTitle').textContent = '🎉 Survived week ' + (day / 3) + '!';
+  $('winPanel').style.display = 'block';
+  spawnConfetti();
+});
+$('winOk').addEventListener('click', () => { $('winPanel').style.display = 'none'; composeTally(); });
+$('rentFace').addEventListener('click', () => { $('rentPanel').style.display = 'none'; $('bankruptPanel').style.display = 'block'; });
+$('bankruptOk').addEventListener('click', () => { $('bankruptPanel').style.display = 'none'; startEnding(); });
+$('startOverBtn').addEventListener('click', () => {
+  $('endPanel').style.display = 'none';
+  coinFrom = null; coinTo = null; coinLabel = 'Y O U R   C O I N S'; playerLeaving = false;
+  reset(); running = true; musicStart();
+});
+function spawnConfetti() {
+  const colors = ['#e06868', '#ffd94a', '#7dd87d', '#6ab0e0', '#c99ae0', '#f3e9d2'];
+  for (let i = 0; i < 160; i++) confetti.push({ x: rf(0, W), y: rf(-H * 0.6, -10), vx: rf(-14, 14), vy: rf(45, 120), rot: rf(0, 6.3), vr: rf(-4, 4), w: rf(5, 9), h: rf(8, 14), color: colors[i % colors.length], seed: rf(0, 9), life: rf(3.2, 4.6) });
+}
+function startEnding() {
+  endingStep = 0; playerLeaving = false;
+  endBuyer = { id: 998, x: 446, y: 388, state: 'haggle', kind: 'buyer', genre: 'green',
+               look: { skin: '#e8b48c', hair: '#6b4a2f', hairStyle: 0, coat: '#b0503c' } };
+  player.x = 532; player.y = 388; player.target = null;
+  coinFrom = endBuyer; coinTo = { x: 532, y: 354 }; coinLabel = 'H I S   C O I N S';
+  showEndingLine();
+  $('introBar').style.display = 'block';
+}
+function showEndingLine() {
+  $('introName').textContent = ENDING_LINES[endingStep].who;
+  $('introLine').textContent = ENDING_LINES[endingStep].line;
+}
+function advanceEnding() {
+  if (endingStep < 0) return;
+  if (endingStep === 2 && coinAnim) { coinAnim = null; introCoins = 500; startCoinHold(); return; }
+  if (endingStep === 1) { coinAnim = { t: 0 }; introCoins = 9999; }
+  if (endingStep === 2) playerLeaving = true;
+  endingStep++;
+  if (endingStep >= ENDING_LINES.length) {
+    endingStep = -1; endBuyer = null; coinFrom = null; coinTo = null;
+    $('introBar').style.display = 'none';
+    $('endPanel').style.display = 'block';
+    return;
+  }
+  showEndingLine();
+}
+function updateEnding(dt) {
+  if (playerLeaving) { if (moveToward(player, DOOR.x, DOOR.y + 24, 175, dt)) playerLeaving = false; }
+  confetti = confetti.filter(p => { p.life -= dt; p.vy = Math.min(150, p.vy + 60 * dt); p.y += p.vy * dt; p.x += p.vx * dt + Math.sin(p.y * 0.04 + p.seed) * 0.7; p.rot += p.vr * dt; return p.life > 0 && p.y < H + 24; });
+}
 
 function composeTally() {
   const profit = coins - dayStartCoins;
@@ -684,6 +783,7 @@ function composeTally() {
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
     (stats.restocked ? '🧥 The Mysterious Man restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
     (stats.restockDeclined ? '🧥 You turned down the Mysterious Man\'s restock (' + stats.restockDeclined + ' empty spaces left bare)<br>' : '') +
+    (stats.rentPaid ? '🧥 Rent to the Mysterious Man: <b>−' + stats.rentPaid + ' 🪙</b> cash<br>' : '') +
     'Wasted at closing (no shelf or arm space): <b>' + stats.wasted + '</b> books' + (stats.wasted ? ' worth <b>' + stats.wastedValue + ' 🪙</b> at sale value' : '') + '<br>' +
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
     'Walkouts — not in stock: <b>' + stats.walkStock + '</b><br>' +
@@ -697,7 +797,7 @@ function composeTally() {
   $('tallyPanel').style.display = 'block';
 }
 $('restartBtn').addEventListener('click', startNextDay);
-$('introBar').addEventListener('click', advanceIntro);
+$('introBar').addEventListener('click', () => { if (endingStep >= 0) advanceEnding(); else advanceIntro(); });
 
 // ---------- Draw ----------
 function drawCustomer(c) {
@@ -910,6 +1010,7 @@ function draw() {
     }
     if (c.state === 'leaveMad') { ctx.fillStyle = '#e06868'; ctx.font = '17px serif'; ctx.fillText('💢', c.x, c.y - 60); }
   }
+  if (endBuyer) drawCustomer(endBuyer);
   // the landlord (opening sequence only) — shady suit, fedora, deed in hand
   if (landlord) {
     drawCustomer(landlord);
@@ -918,8 +1019,12 @@ function draw() {
     ctx.fillStyle = '#f3e9d2'; ctx.fillRect(landlord.x + 17, landlord.y - 8, 10, 13);       // the deed
     ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(landlord.x + 19, landlord.y - 4, 6, 1.4); ctx.fillRect(landlord.x + 19, landlord.y - 1, 6, 1.4);
   }
-  // player (the bookseller)
+  // player (the bookseller) — wearing the fedora during the ending sequence
   drawBookseller();
+  if (endingStep >= 0) {
+    ctx.fillStyle = '#211d26'; ctx.fillRect(player.x - 15, player.y - 46, 30, 5);
+    ctx.fillRect(player.x - 9, player.y - 57, 18, 11);
+  }
   carry.forEach((b, i) => drawBook(player.x - 16 + i * 11, player.y - 60, b.genre, b.special, 0.7));
   // flash
   if (flashT > 0) { ctx.fillStyle = '#ffd98a'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center'; ctx.fillText(flashTxt.split('🪙').join('●'), W / 2, 150); }
@@ -933,11 +1038,17 @@ function draw() {
   if (coinAnim || coinHold > 0) {
     ctx.textAlign = 'center';
     ctx.font = '13px Georgia'; ctx.fillStyle = '#f3e9d2';
-    ctx.fillText('Y O U R   C O I N S', W / 2, 196);
+    ctx.fillText(coinLabel, W / 2, 196);
     ctx.font = 'bold 52px Georgia';
     const txt = Math.round(introCoins).toLocaleString('en-US');
     ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(20,12,4,.85)'; ctx.strokeText(txt, W / 2, 248);
     ctx.fillStyle = '#ffd94a'; ctx.fillText(txt, W / 2, 248); ctx.lineWidth = 1;
+  }
+  // confetti (win celebration)
+  for (const p of confetti) {
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+    ctx.fillStyle = p.color; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    ctx.restore();
   }
   requestAnimationFrame(draw);
 }
