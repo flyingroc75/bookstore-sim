@@ -651,6 +651,7 @@ function startNextDay() {
 
 function endDay() {
   over = true; running = false;
+  refreshHUD();   // settle the HUD NOW — a last-second sale/purchase otherwise leaves it stale vs. the rent check
   if (Music.ctx && Music.ctx.state === 'running' && Music.on) {   // closing chime
     const t = Music.ctx.currentTime;
     pluck(659.25, t, 0.7, 0.045, 'sine'); pluck(523.25, t + 0.22, 0.8, 0.045, 'sine'); pluck(392.0, t + 0.44, 1.1, 0.05, 'sine');
@@ -684,7 +685,7 @@ function endDay() {
 let pendingRestock = null;
 $('restockYes').addEventListener('click', () => {
   if (!pendingRestock) return;
-  coins -= pendingRestock.total;
+  coins -= pendingRestock.total; refreshHUD();
   stats.restocked = pendingRestock.empty; stats.restockCost = pendingRestock.total;
   for (const g of ['green', 'purple'])
     while (shelfStock[g].length < SHELF_CAP) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = 30; shelfStock[g].push(b); }
@@ -721,7 +722,7 @@ function showRent() {
   $('rentPanel').style.display = 'block';
 }
 $('rentPay').addEventListener('click', () => {
-  coins -= 500; stats.rentPaid = 500;
+  coins -= 500; stats.rentPaid = 500; refreshHUD();
   $('rentPanel').style.display = 'none';
   $('winPanel').style.display = 'block';
   spawnConfetti();
