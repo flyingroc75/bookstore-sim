@@ -38,6 +38,11 @@
                box-shadow:0 4px 16px rgba(0,0,0,.55); }
   #actionBtn:hover { background:#d18f47; }
   .swatch { display:inline-block; width:12px; height:16px; border-radius:2px; vertical-align:-2px; margin-right:5px; border:1px solid rgba(0,0,0,.4); }
+  #haggleReveal { display:none; margin:14px auto 2px; padding:12px 10px; border-radius:10px; max-width:320px;
+                  background:#1d150c; border:2px solid #ffd98a; font-size:16.5px; line-height:1.5; }
+  #haggleReveal.pop { display:block; animation:popIn .45s ease-out; }
+  #haggleReveal .big { font-size:27px; font-weight:bold; }
+  @keyframes popIn { 0% { transform:scale(.6); opacity:0; } 60% { transform:scale(1.08); opacity:1; } 100% { transform:scale(1); } }
 </style>
 </head>
 <body>
@@ -59,13 +64,14 @@
     <p id="haggleBook"></p>
     <p>Your appraisal: <b id="haggleRange" style="color:#35c4b5;"></b> <span style="color:#35c4b5;">(teal band on the bar)</span></p>
     <p>Seller asks: <b id="haggleAsk"></b> · Their patience is draining…</p>
-    <p style="margin-top:10px;">Your offer: <span id="offerVal">0</span> 🪙</p>
+    <p style="margin-top:10px;" id="offerLine">Your offer: <span id="offerVal">0</span> 🪙</p>
     <input type="range" id="offerSlider" min="0" step="1" value="0">
-    <div class="row">
+    <div class="row" id="haggleButtons">
       <button class="primary" id="offerBtn">Make offer</button>
       <button id="declineBtn">Decline</button>
     </div>
     <p id="haggleMsg" style="color:#ffd98a; min-height:18px;"></p>
+    <div id="haggleReveal"></div>
   </div>
 
   <div class="panel" id="tallyPanel">
@@ -109,6 +115,7 @@ const OBSTACLES = [ SHELF.green, SHELF.purple, BUY_COUNTER, SELL_COUNTER ];
 // ---------- State ----------
 let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
 let stats, haggle; // haggle = { seller, offer }
+let startNetWorth = 0;
 let player;
 
 function makeBook(genre, special) {
@@ -117,7 +124,7 @@ function makeBook(genre, special) {
   let value;
   if (special) value = genre === 'green' ? rnd(90, 140) : rnd(120, 190);
   else         value = genre === 'green' ? rnd(20, 38)  : rnd(30, 52);
-  return { genre, special: !!special, value, sellPrice: value };
+  return { genre, special: !!special, value, sellPrice: value, cost: 0 };   // cost = what we paid (0 for opening stock)
 }
 function appraisalRange(book) {
   const spread = book.special ? 0.45 : 0.35;   // specials are the bigger gamble
@@ -133,7 +140,8 @@ function reset() {
   carry = [];
   customers = [];
   dayT = 0; spawnT = 1.2; running = false; over = false; haggle = null;
-  stats = { sold: 0, revenue: 0, bought: 0, spent: 0, walkWait: 0, walkStock: 0, turnedAway: 0 };
+  stats = { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0 };
+  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple).reduce((a, b) => a + b.sellPrice, 0);
   player = { x: 480, y: 330, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
@@ -200,7 +208,7 @@ function doInteract() {
   } else if (st === 'sell') {
     const b = frontBuyer();
     if (b && b.book) {
-      coins += b.book.sellPrice; stats.sold++; stats.revenue += b.book.sellPrice;
+      coins += b.book.sellPrice; stats.sold++; stats.revenue += b.book.sellPrice; stats.costOfSold += (b.book.cost || 0);
       b.state = 'leaveHappy';
       flash('+' + b.book.sellPrice + ' 🪙');
       sfx('sale');
@@ -254,10 +262,11 @@ $('offerBtn').addEventListener('click', () => {
   if (offer >= s.floor) {
     if (carry.length >= CARRY_MAX) { $('haggleMsg').textContent = 'Your arms are full (max ' + CARRY_MAX + '). Stock something first!'; return; }
     coins -= offer; stats.bought++; stats.spent += offer;
+    s.book.cost = offer;
     carry.push(s.book);
-    flash('Bought for ' + offer + ' 🪙');
     sfx('buy');
-    closeHaggle('deal');
+    haggle.dealt = true;
+    showReveal(s.book, offer);
   } else {
     s.patience -= 10;
     s.ask = Math.max(s.floor + 3, Math.round((s.ask + offer) / 2));
@@ -267,6 +276,32 @@ $('offerBtn').addEventListener('click', () => {
   }
 });
 $('declineBtn').addEventListener('click', () => { if (haggle) closeHaggle('decline'); });
+
+// After a deal: reveal the book's ACTUAL sale value with a little count-up,
+// so the player learns on the spot whether they overpaid.
+function showReveal(book, paid) {
+  for (const id of ['offerLine', 'offerSlider', 'haggleButtons', 'haggleMsg']) $(id).style.display = 'none';
+  const margin = book.sellPrice - paid;
+  const rev = $('haggleReveal');
+  rev.innerHTML = '🤝 Deal! You paid <b>' + paid + '</b> 🪙<br>The book actually sells for<br>' +
+    '<span class="big" id="revealVal">0</span> 🪙<br>' +
+    '<span style="color:' + (margin >= 0 ? '#8fe08a' : '#e08a8a') + '; font-weight:bold;">' +
+    (margin >= 0 ? 'Margin if it sells: +' + margin + ' 🎉' : 'You overpaid by ' + (-margin) + ' 😬') + '</span>';
+  rev.classList.add('pop');
+  const t0 = performance.now();
+  const tick = () => {
+    const el = $('revealVal'); if (!el) return;
+    const p = Math.min(1, (performance.now() - t0) / 750);
+    el.textContent = Math.round(book.sellPrice * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  setTimeout(() => {
+    rev.classList.remove('pop'); rev.style.display = 'none';
+    for (const id of ['offerLine', 'offerSlider', 'haggleButtons', 'haggleMsg']) $(id).style.display = '';
+    if (haggle && haggle.dealt) { flash('Bought for ' + paid + ' 🪙'); closeHaggle('deal'); }
+  }, 2100);
+}
 
 // ---------- Music (generative, WebAudio — no audio files) ----------
 const Music = { ctx: null, on: true, step: 0, nextTime: 0, timer: null };
@@ -383,7 +418,7 @@ function update(dt) {
         const idx = bq.indexOf(c);
         const pos = queuePos(BUY_COUNTER, Math.max(0, idx), true);
         if (c.state === 'toBuy') moveToward(c, pos.x, pos.y, 125, dt);
-        c.patience -= dt * (c.state === 'haggle' ? 2.0 : 1.5);
+        if (!(haggle && haggle.dealt && haggle.seller === c)) c.patience -= dt * (c.state === 'haggle' ? 2.0 : 1.5);
         if (c.patience <= 0) {
           if (haggle && haggle.seller === c) closeHaggle('storm');
           c.state = 'leaveMad'; stats.walkWait++;
@@ -444,14 +479,21 @@ function endDay() {
   over = true; running = false;
   if (haggle) closeHaggle('decline');
   const profit = coins - 500;
+  const leftBooks = shelfStock.green.concat(shelfStock.purple, carry);
+  const invValue = leftBooks.reduce((a, b) => a + b.sellPrice, 0);
+  const invBoughtCost = leftBooks.reduce((a, b) => a + (b.cost || 0), 0);
+  const netWorth = coins + invValue, nwDelta = netWorth - startNetWorth;
+  const soldProfit = stats.revenue - stats.costOfSold;
   $('tallyBody').innerHTML =
-    'Books sold: <b>' + stats.sold + '</b> (+' + stats.revenue + ' 🪙)<br>' +
-    'Books bought: <b>' + stats.bought + '</b> (−' + stats.spent + ' 🪙)<br>' +
+    'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b> (cost of those books: ' + stats.costOfSold + ' → profit on sold books <b style="color:' + (soldProfit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (soldProfit >= 0 ? '+' : '') + soldProfit + '</b>)<br>' +
+    'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
     'Walkouts — not in stock: <b>' + stats.walkStock + '</b><br>' +
-    'Sellers turned away: <b>' + stats.turnedAway + '</b><br>' +
-    'Books left on shelves: <b>' + (shelfStock.green.length + shelfStock.purple.length) + '</b> · In your arms: <b>' + carry.length + '</b><br><br>' +
-    'Final coins: <b>' + coins + '</b> · Day profit: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
+    'Sellers turned away: <b>' + stats.turnedAway + '</b><br><br>' +
+    '📚 Stock left: <b>' + leftBooks.length + '</b> books worth <b>' + invValue + ' 🪙</b> at sale value' + (invBoughtCost ? ' (you paid ' + invBoughtCost + ' for the bought ones)' : '') + '<br>' +
+    '🪙 Coins: <b>' + coins + '</b><br>' +
+    '💰 <b>Net worth: ' + netWorth + ' 🪙</b> (opened at ' + startNetWorth + ') — change: <b style="color:' + (nwDelta >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (nwDelta >= 0 ? '+' : '') + nwDelta + ' 🪙</b><br>' +
+    'Cash-only day result: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
   $('tallyPanel').style.display = 'block';
 }
 $('restartBtn').addEventListener('click', () => { reset(); $('startPanel').style.display = 'block'; });
