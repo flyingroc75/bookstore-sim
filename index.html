@@ -110,18 +110,19 @@ const COIN = '<span class="coin"></span>';
 // ---------- Layout ----------
 const W = 960, H = 600;
 const SHELF_TIERS = 3;               // big bookcases with room to grow into
-// Floor plan reserves room for EIGHT bookshelves: 4 along the back wall,
-// 4 as islands. Only the first two are built (green, purple) for now.
-const SHELF_SLOTS = [
-  { x: 30,  y: 36,  w: 210, h: 140 }, { x: 260, y: 36,  w: 210, h: 140 },
-  { x: 490, y: 36,  w: 210, h: 140 }, { x: 720, y: 36,  w: 210, h: 140 },
-  { x: 30,  y: 236, w: 210, h: 84 },  { x: 260, y: 236, w: 210, h: 84 },
-  { x: 490, y: 236, w: 210, h: 84 },  { x: 720, y: 236, w: 210, h: 84 }
+// Floor plan per Roy's sketch (2026-10-16): bookcases in the two TOP CORNERS,
+// counters along the bottom, door at the bottom-left. The back wall has room
+// for four cases total — the two middle slots stay reserved for future genres.
+const SHELF = {
+  green:  { x: 36,  y: 40, w: 210, h: 140 },
+  purple: { x: 714, y: 40, w: 210, h: 140 }
+};
+const RESERVED_SLOTS = [
+  { x: 258, y: 40, w: 210, h: 140 }, { x: 480, y: 40, w: 210, h: 140 }
 ];
-const SHELF = { green: SHELF_SLOTS[0], purple: SHELF_SLOTS[1] };
 const BUY_COUNTER  = { x: 90,  y: 452, w: 300, h: 52 };
 const SELL_COUNTER = { x: 570, y: 452, w: 300, h: 52 };
-const DOOR = { x: 452, y: 588 };
+const DOOR = { x: 84, y: 588 };
 const OBSTACLES = [ SHELF.green, SHELF.purple, BUY_COUNTER, SELL_COUNTER ];
 
 // ---------- State ----------
@@ -660,10 +661,10 @@ function draw() {
   ctx.fillStyle = '#74343a'; ctx.fillRect(392, 340, 176, 96);
   ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(400, 348, 160, 80); ctx.lineWidth = 1;
   ctx.strokeStyle = 'rgba(201,163,90,.5)'; ctx.strokeRect(412, 359, 136, 54);
-  // reserved floor space for the six future bookshelves (only 2 of 8 built)
+  // reserved space on the back wall for future bookshelves
   ctx.setLineDash([6, 5]);
-  for (let i = 2; i < SHELF_SLOTS.length; i++) {
-    const r = SHELF_SLOTS[i];
+  for (let i = 0; i < RESERVED_SLOTS.length; i++) {
+    const r = RESERVED_SLOTS[i];
     ctx.fillStyle = 'rgba(0,0,0,.13)'; ctx.fillRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12);
     ctx.strokeStyle = 'rgba(243,233,210,.38)'; ctx.strokeRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12);
   }
