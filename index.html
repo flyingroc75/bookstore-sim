@@ -114,11 +114,11 @@
         <p>A correspondence course in grading books. Your appraisal ranges come in about twice as tight — fewer nasty surprises at the reveal.</p>
         <button class="primary upbuy" data-up="appraisal">Buy — 50</button>
       </div>
-      <div class="upcard" id="upCard-bookcase">
-        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="12" y="6" width="36" height="48" fill="#7d5a30"/><rect x="15" y="9" width="30" height="42" fill="#43301d"/><line x1="15" y1="23" x2="45" y2="23" stroke="#96733d" stroke-width="2.6"/><line x1="15" y1="37" x2="45" y2="37" stroke="#96733d" stroke-width="2.6"/><rect x="18" y="13" width="5" height="10" fill="#4f7d4a"/><rect x="24" y="12" width="5" height="11" fill="#7a9e43"/><rect x="33" y="13" width="5" height="10" fill="#5a8c6e"/><rect x="20" y="27" width="5" height="10" fill="#8a5fa0"/><rect x="26" y="26" width="5" height="11" fill="#6a4a8c"/><rect x="36" y="27" width="5" height="10" fill="#a06ab0"/><rect x="19" y="41" width="5" height="10" fill="#4f7d4a"/><rect x="30" y="40" width="5" height="11" fill="#8a5fa0"/><rect x="37" y="41" width="5" height="10" fill="#7a9e43"/></svg></div>
-        <h3>Bookcase Upgrade</h3>
-        <p>Proper three-tier bookcases, built overnight. Each case holds <b>9 books</b> instead of 6 — room to breathe, room to stock.</p>
-        <button class="primary upbuy" data-up="bookcase">Buy — 50</button>
+      <div class="upcard" id="upCard-marketing">
+        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><path d="M10 26 L34 16 L34 44 L10 34 Z" fill="#c4503c"/><rect x="6" y="25" width="5" height="10" rx="2" fill="#8c3527"/><path d="M16 35 L20 35 L22 47 L16 47 Z" fill="#6e4630"/><path d="M40 20 a14 14 0 0 1 0 20" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M45 15 a21 21 0 0 1 0 30" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/></svg></div>
+        <h3>Marketing</h3>
+        <p>A flyer run, a sandwich board out front, chalk arrows on the sidewalk. Word gets around: <b>+5 reputation</b>. Once per night.</p>
+        <button class="primary upbuy" data-up="marketing">Buy — 50</button>
       </div>
     </div>
     <div class="row"><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
@@ -171,14 +171,14 @@ const DAY_LEN = 210;                 // one day = 3 minutes 30 seconds
 const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4' };
 const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction' };
 const CARRY_MAX = 4;
-let SHELF_CAP = 6;                   // max books per shelf (9 with the bookcase upgrade)
+let SHELF_CAP = 6;                   // max books per shelf
 const COIN = '<span class="coin"></span>';
 
 // ---------- Layout ----------
 const W = 960, H = 600;
-let SHELF_TIERS = 2;                 // tiers per bookcase (3 with the upgrade)
-let upgrades = { supplier: false, appraisal: false, bookcase: false };
-let supplierUsedToday = false;
+let SHELF_TIERS = 2;                 // tiers per bookcase
+let upgrades = { supplier: false, appraisal: false };
+let supplierUsedToday = false, marketingTonight = false;
 // Floor plan per Roy's sketch (2026-10-16): bookcases in the two TOP CORNERS,
 // counters along the bottom, door at the bottom-left. Room for SIX more
 // bookshelves after these two: two more on the back wall, four as islands.
@@ -329,7 +329,7 @@ function reset() {
   player = { x: 480, y: 385, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
-  upgrades = { supplier: false, appraisal: false, bookcase: false }; applyUpgrades();
+  upgrades = { supplier: false, appraisal: false }; applyUpgrades();
   if (!storySeen) startIntro();
 }
 
@@ -706,10 +706,8 @@ function refreshHUD() {
 // shop owns goes back on a shelf — books in your arms and books buyers are
 // still holding. Shelf first, then your arms; whatever fits nowhere is wasted.
 function applyUpgrades() {
-  SHELF_CAP = upgrades.bookcase ? 9 : 6;
-  SHELF_TIERS = upgrades.bookcase ? 3 : 2;
-  for (const g of ['green', 'purple']) SHELF[g].h = upgrades.bookcase ? 174 : 116;
   supplierUsedToday = false;
+  marketingTonight = false;
 }
 function startNextDay() {
   day++;
@@ -918,15 +916,26 @@ function renderUpgrades() {
   $('upCoins').textContent = coins;
   document.querySelectorAll('.upbuy').forEach(btn => {
     const key = btn.dataset.up;
-    if (upgrades[key]) { btn.textContent = 'Owned ✓'; btn.disabled = true; $('upCard-' + key).classList.add('owned'); }
+    if (key === 'marketing') {
+      btn.textContent = marketingTonight ? 'Running tonight ✓' : 'Buy — 50';
+      btn.disabled = marketingTonight || coins < 50;
+      $('upCard-marketing').classList.toggle('owned', marketingTonight);
+    }
+    else if (upgrades[key]) { btn.textContent = 'Owned ✓'; btn.disabled = true; $('upCard-' + key).classList.add('owned'); }
     else { btn.textContent = 'Buy — 50'; btn.disabled = coins < 50; $('upCard-' + key).classList.remove('owned'); }
   });
 }
 document.querySelectorAll('.upbuy').forEach(btn => btn.addEventListener('click', () => {
   const key = btn.dataset.up;
-  if (upgrades[key] || coins < 50) return;
-  coins -= 50; upgrades[key] = true; refreshHUD();
-  sfx('buy');
+  if (coins < 50) return;
+  if (key === 'marketing') {
+    if (marketingTonight) return;
+    coins -= 50; marketingTonight = true; reputation += 5;   // word gets around
+  } else {
+    if (upgrades[key]) return;
+    coins -= 50; upgrades[key] = true;
+  }
+  refreshHUD(); sfx('buy');
   renderUpgrades();
 }));
 $('introBar').addEventListener('click', () => { if (endingStep >= 0) advanceEnding(); else advanceIntro(); });
