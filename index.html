@@ -248,7 +248,7 @@ function reset() {
   dayT = 0; spawnT = 1.2; running = false; over = false; haggle = null;
   stats = freshStats();
   day = 1; dayStartCoins = coins; reputation = 25;
-  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple).reduce((a, b) => a + b.sellPrice, 0);
+  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple).reduce((a, b) => a + (b.cost || 0), 0);
   player = { x: 480, y: 385, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
@@ -614,7 +614,7 @@ function startNextDay() {
   customers = []; dayT = 0; spawnT = 1.2; over = false; haggle = null;
   stats = freshStats();
   dayStartCoins = coins;
-  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple, carry).reduce((a, b) => a + b.sellPrice, 0);
+  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple, carry).reduce((a, b) => a + (b.cost || 0), 0);
   player.x = 480; player.y = 385; player.target = null;
   $('tallyPanel').style.display = 'none';
   $('hagglePanel').style.display = 'none';
@@ -675,13 +675,12 @@ $('restockNo').addEventListener('click', () => {
 function composeTally() {
   const profit = coins - dayStartCoins;
   const leftBooks = shelfStock.green.concat(shelfStock.purple, carry);
-  const invValue = leftBooks.reduce((a, b) => a + b.sellPrice, 0);
+  const invValue = leftBooks.reduce((a, b) => a + (b.cost || 0), 0);   // inventory at cost → Δ net worth = profit
   const invBoughtCost = leftBooks.reduce((a, b) => a + (b.cost || 0), 0);
   const netWorth = coins + invValue, nwDelta = netWorth - startNetWorth;
-  const soldProfit = stats.revenue - stats.costOfSold;
   $('tallyBody').innerHTML =
     '🌙 <b>Day ' + day + ' complete.</b><br><br>' +
-    'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b> (cost of those books: ' + stats.costOfSold + ' → profit on sold books <b style="color:' + (soldProfit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (soldProfit >= 0 ? '+' : '') + soldProfit + '</b>)<br>' +
+    'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b><br>' +
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
     (stats.restocked ? '🧥 The Mysterious Man restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
     (stats.restockDeclined ? '🧥 You turned down the Mysterious Man\'s restock (' + stats.restockDeclined + ' empty spaces left bare)<br>' : '') +
@@ -689,7 +688,7 @@ function composeTally() {
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
     'Walkouts — not in stock: <b>' + stats.walkStock + '</b><br>' +
     'Sellers turned away: <b>' + stats.turnedAway + '</b><br><br>' +
-    '📚 Stock left: <b>' + leftBooks.length + '</b> books worth <b>' + invValue + ' 🪙</b> at sale value' + (invBoughtCost ? ' (you paid ' + invBoughtCost + ' for the bought ones)' : '') + '<br>' +
+    '📚 Stock left: <b>' + leftBooks.length + '</b> books worth <b>' + invValue + ' 🪙</b> at cost<br>' +
     '🪙 Coins: <b>' + coins + '</b><br>' +
     '💰 <b>Net worth: ' + netWorth + ' 🪙</b> (opened at ' + startNetWorth + ') — change: <b style="color:' + (nwDelta >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (nwDelta >= 0 ? '+' : '') + nwDelta + ' 🪙</b><br>' +
     'Cash-only day result: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
