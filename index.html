@@ -38,6 +38,9 @@
                box-shadow:0 4px 16px rgba(0,0,0,.55); }
   #actionBtn:hover { background:#d18f47; }
   .swatch { display:inline-block; width:12px; height:16px; border-radius:2px; vertical-align:-2px; margin-right:5px; border:1px solid rgba(0,0,0,.4); }
+  .coin { display:inline-block; width:.84em; height:.84em; border-radius:50%; vertical-align:-.13em;
+          background:radial-gradient(circle at 35% 30%, #ffedb0, #f2c230 55%, #cf9a10);
+          border:1.5px solid #8a6d1f; box-shadow:inset 0 0 0 2px rgba(255,255,255,.28), 0 1px 2px rgba(0,0,0,.4); }
   #haggleReveal { display:none; position:absolute; inset:0; border-radius:10px; background:rgba(10,6,3,.72);
                   align-items:center; justify-content:center; z-index:6; }
   #haggleReveal.pop { display:flex; animation:fadeIn .25s ease-out; }
@@ -51,7 +54,7 @@
 <body>
 <h1>📚 Bookstore Sim — Prototype</h1>
 <div id="hud">
-  <span>🪙 <b id="coins">500</b></span>
+  <span><span class="coin"></span> <b id="coins">500</b></span>
   <span>⏳ Day: <b id="clock">4:00</b></span>
   <span><span class="swatch" style="background:#3fae5a"></span>Non-fiction shelf: <b id="shelfG">0</b></span>
   <span><span class="swatch" style="background:#8b4fc4"></span>Fiction shelf: <b id="shelfP">0</b></span>
@@ -67,7 +70,7 @@
     <p id="haggleBook"></p>
     <p>Your appraisal: <b id="haggleRange" style="color:#35c4b5;"></b> <span style="color:#35c4b5;">(teal band on the bar)</span></p>
     <p>Seller asks: <b id="haggleAsk"></b> · Their patience is draining…</p>
-    <p style="margin-top:10px;" id="offerLine">Your offer: <span id="offerVal">0</span> 🪙</p>
+    <p style="margin-top:10px;" id="offerLine">Your offer: <span id="offerVal">0</span> <span class="coin"></span></p>
     <input type="range" id="offerSlider" min="0" step="1" value="0">
     <div class="row" id="haggleButtons">
       <button class="primary" id="offerBtn">Make offer</button>
@@ -103,6 +106,8 @@ const DAY_LEN = 240;                 // one day = 4 minutes
 const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4' };
 const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction' };
 const CARRY_MAX = 4;
+const SHELF_CAP = 6;                 // max books per shelf
+const COIN = '<span class="coin"></span>';
 
 // ---------- Layout ----------
 const W = 960, H = 600;
@@ -221,8 +226,10 @@ function doInteract() {
   } else if (st && st.startsWith('shelf-')) {
     const g = st.slice(6);
     const before = carry.length;
-    carry = carry.filter(bk => { if (bk.genre === g) { shelfStock[g].push(bk); return false; } return true; });
-    if (carry.length < before) flash('Stocked ' + GENRE_NAME[g]);
+    let moved = 0;
+    carry = carry.filter(bk => { if (bk.genre === g && shelfStock[g].length < SHELF_CAP) { shelfStock[g].push(bk); moved++; return false; } return true; });
+    if (moved) flash('Stocked ' + GENRE_NAME[g]);
+    else if (before) flash(GENRE_NAME[g] + ' shelf is full!');
   }
 }
 
@@ -293,6 +300,7 @@ function showReveal(book, paid) {
     '<span style="color:' + (margin >= 0 ? '#8fe08a' : '#e08a8a') + '; font-weight:bold;">' +
     (margin >= 0 ? 'Margin if it sells: +' + margin + ' 🎉' : 'You overpaid by ' + (-margin) + ' 😬') + '</span><br>' +
     '<button class="primary" id="revealOk" style="margin-top:10px;">Continue</button></div>';
+  rev.innerHTML = rev.innerHTML.split('🪙').join(COIN);
   rev.classList.add('pop');
   $('revealOk').addEventListener('click', closeReveal);
   const t0 = performance.now();
@@ -468,9 +476,9 @@ function update(dt) {
   else if (st && st.startsWith('shelf-')) {
     const g = st.slice(6);
     canAct = carry.some(b => b.genre === g);
-    hint = canAct ? 'Stock your ' + GENRE_NAME[g] + ' books' : GENRE_NAME[g] + ' shelf (' + shelfStock[g].length + ' books)';
+    hint = canAct ? 'Stock your ' + GENRE_NAME[g] + ' books' : GENRE_NAME[g] + ' shelf (' + shelfStock[g].length + '/' + SHELF_CAP + ')';
   }
-  $('hint').textContent = hint;
+  $('hint').innerHTML = hint.split('🪙').join(COIN);
   $('actionBtn').style.display = canAct ? 'block' : 'none';
   $('actionBtn').textContent = st === 'buy' ? 'Haggle' : st === 'sell' ? 'Ring up' : 'Stock books';
   if (flashT > 0) flashT -= dt;
@@ -479,8 +487,8 @@ function update(dt) {
   $('coins').textContent = coins;
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
-  $('shelfG').textContent = shelfStock.green.length + (shelfStock.green.some(b => b.special) ? ' (✦' + shelfStock.green.filter(b => b.special).length + ')' : '');
-  $('shelfP').textContent = shelfStock.purple.length + (shelfStock.purple.some(b => b.special) ? ' (✦' + shelfStock.purple.filter(b => b.special).length + ')' : '');
+  $('shelfG').textContent = shelfStock.green.length + '/' + SHELF_CAP + (shelfStock.green.some(b => b.special) ? ' (✦' + shelfStock.green.filter(b => b.special).length + ')' : '');
+  $('shelfP').textContent = shelfStock.purple.length + '/' + SHELF_CAP + (shelfStock.purple.some(b => b.special) ? ' (✦' + shelfStock.purple.filter(b => b.special).length + ')' : '');
   $('carry').textContent = carry.length ? carry.map(b => (b.genre === 'green' ? '🟩' : '🟪') + (b.special ? '✦' : '')).join(' ') : '—';
 }
 
@@ -503,6 +511,7 @@ function endDay() {
     '🪙 Coins: <b>' + coins + '</b><br>' +
     '💰 <b>Net worth: ' + netWorth + ' 🪙</b> (opened at ' + startNetWorth + ') — change: <b style="color:' + (nwDelta >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (nwDelta >= 0 ? '+' : '') + nwDelta + ' 🪙</b><br>' +
     'Cash-only day result: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
+  $('tallyBody').innerHTML = $('tallyBody').innerHTML.split('🪙').join(COIN);
   $('tallyPanel').style.display = 'block';
 }
 $('restartBtn').addEventListener('click', () => { reset(); $('startPanel').style.display = 'block'; });
@@ -663,7 +672,6 @@ function draw() {
       ctx.fillStyle = b.special ? '#d4af37' : SPINE_SHADES[g][i % SPINE_SHADES[g].length];
       ctx.fillRect(bx, s.y + s.h - 8 - bh, bw, bh);
       ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(bx, s.y + s.h - 8 - bh + 4, bw, 1.8);
-      if (b.special) { ctx.fillStyle = '#fff3b0'; ctx.font = '9px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', bx + bw / 2, s.y + s.h - 14 - bh); }
     });
     // hanging sign
     ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.beginPath();
@@ -672,7 +680,7 @@ function draw() {
     ctx.fillStyle = '#33261a'; ctx.fillRect(s.x + s.w / 2 - 62, s.y - 34, 124, 17);
     ctx.strokeStyle = GENRE_COLOR[g]; ctx.strokeRect(s.x + s.w / 2 - 62, s.y - 34, 124, 17);
     ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 11.5px Georgia'; ctx.textAlign = 'center';
-    ctx.fillText(GENRE_NAME[g].toUpperCase() + ' (' + shelfStock[g].length + ')', s.x + s.w / 2, s.y - 21.5);
+    ctx.fillText(GENRE_NAME[g].toUpperCase() + ' (' + shelfStock[g].length + '/' + SHELF_CAP + ')', s.x + s.w / 2, s.y - 21.5);
   }
   // counters — panelled wood, countertop slab, props
   for (const [c, label, isBuy] of [[BUY_COUNTER, 'WE BUY BOOKS', true], [SELL_COUNTER, 'CHECKOUT', false]]) {
@@ -720,7 +728,7 @@ function draw() {
   drawBookseller();
   carry.forEach((b, i) => drawBook(player.x - 16 + i * 11, player.y - 60, b.genre, b.special, 0.7));
   // flash
-  if (flashT > 0) { ctx.fillStyle = '#ffd98a'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center'; ctx.fillText(flashTxt, W / 2, 150); }
+  if (flashT > 0) { ctx.fillStyle = '#ffd98a'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center'; ctx.fillText(flashTxt.split('🪙').join('●'), W / 2, 150); }
   requestAnimationFrame(draw);
 }
 
