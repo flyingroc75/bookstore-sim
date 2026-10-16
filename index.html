@@ -84,15 +84,20 @@
     <div class="row"><button class="primary" id="restartBtn">Open a new day</button></div>
   </div>
 
-  <div class="panel" id="startPanel" style="display:block;">
+  <div class="panel" id="startPanel" style="display:none;">
     <h2>📚 Opening Day</h2>
-    <p>You have <b>500 coins</b> and a stocked shop: 6 non-fiction (green) and 6 fiction (purple) on the shelves.</p>
+    <p>The deed is yours, the landlord is gone, and of your 5,000 coins you have <b>500 left</b>. The shop — somewhat run-down — came stocked: 6 non-fiction (green) and 6 fiction (purple) on the shelves.</p>
     <p><b>Buyers</b> go to their genre's shelf, take a book, then queue at the <b>sell counter</b> (right) — walk there to ring them up. Each book sells at its own price, fixed but hidden from you: at the buy counter you only ever see a <b>range</b>.</p>
     <p><b>Sellers</b> queue at the <b>buy counter</b> (left) — haggle with them there. Books you buy go in your arms — carry them to the matching shelf to stock them.</p>
     <p>Everyone has a patience meter. Too slow, or the shelf is empty, and they walk out. The day lasts <b>4 minutes</b>.</p>
     <p>Walk by <b>clicking / tapping</b> where you want to go, and use the big <b>action button</b> when it appears.</p>
     <div class="row"><button class="primary" id="startBtn">Open the shop</button></div>
   </div>
+</div>
+<div id="introBar" style="display:none; position:absolute; left:50%; bottom:70px; transform:translateX(-50%); width:min(560px,92%); background:rgba(30,21,13,.96); border:1.5px solid #c9a35a; border-radius:12px; padding:10px 16px 8px; z-index:6; cursor:pointer; box-shadow:0 6px 22px rgba(0,0,0,.5);">
+  <div id="introName" style="font:700 11px Georgia,serif; letter-spacing:.14em; color:#c9a35a;">SLY LANDLORD</div>
+  <div id="introLine" style="font:italic 17px Georgia,serif; color:#f3e9d2; margin:3px 0 2px;">Psst. Wanna buy a bookstore?</div>
+  <div style="font:11px Georgia,serif; color:#9a8a70; text-align:right;">tap to continue ▸</div>
 </div>
 <div id="hint"></div>
 <div id="help">Every book has its own hidden sell price — you only ever see an appraisal range. Sellers may open above the true value. Profit is made or lost at the buy counter.</div>
@@ -150,6 +155,55 @@ function appraisalRange(book) {
 function rnd(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
 function rf(a, b) { return a + Math.random() * (b - a); }
 
+// ---------- Opening sequence: how you ended up owning this bookstore ----------
+// Roy's backstory: a well-meaning but clueless man who always wanted a
+// bookstore saved up 5,000 coins — and an unscrupulous landlord sprang a
+// run-down one on him. 5,000 in, 500 left.
+const INTRO_LINES = [
+  { who: 'SLY LANDLORD', line: 'Psst. Wanna buy a bookstore?' },
+  { who: 'YOU', line: "Oh boy! I've always wanted a bookstore!" },
+  { who: 'SLY LANDLORD', line: 'Deal.' },
+  { who: 'YOU', line: "…It's a bit run-down. And — wait, where did he go?" }
+];
+let introStep = -1, introCoins = 5000, coinAnim = null, landlord = null, storySeen = false;
+function startIntro() {
+  introStep = 0; introCoins = 5000; coinAnim = null;
+  landlord = { id: 999, x: 532, y: 388, leaving: false, state: 'haggle', kind: 'seller',
+               look: { skin: '#c68863', hair: '#26221f', hairStyle: 1, coat: '#34303c' } };
+  player.x = 446; player.y = 388; player.target = null;
+  showIntroLine();
+  $('introBar').style.display = 'block';
+}
+function showIntroLine() {
+  $('introName').textContent = INTRO_LINES[introStep].who;
+  $('introLine').textContent = INTRO_LINES[introStep].line;
+}
+function advanceIntro() {
+  if (introStep < 0 || storySeen) return;
+  if (introStep === 1) coinAnim = { t: 0 };                    // "Deal." lands next — the coins drain
+  if (introStep === 2 && landlord) { landlord.leaving = true; landlord.state = 'toDoor'; }   // landlord vanishes after the deal
+  introStep++;
+  if (introStep >= INTRO_LINES.length) {
+    storySeen = true; introStep = -1;
+    $('introBar').style.display = 'none';
+    $('startPanel').style.display = 'block';
+    return;
+  }
+  showIntroLine();
+}
+function updateIntro(dt) {
+  if (coinAnim) {
+    coinAnim.t += dt / 1.4;
+    const k = Math.min(1, coinAnim.t);
+    introCoins = 5000 - 4500 * k * k;
+    if (k >= 1) { introCoins = 500; coinAnim = null; if (landlord && introStep === 2) { landlord.leaving = true; landlord.state = 'toDoor'; } }
+  }
+  if (landlord && landlord.leaving) {
+    if (moveToward(landlord, DOOR.x, DOOR.y + 24, 175, dt)) landlord = null;
+  }
+  if (introStep >= 0) refreshHUD();
+}
+
 function reset() {
   coins = 500;
   shelfStock = { green: [], purple: [] };
@@ -162,6 +216,7 @@ function reset() {
   player = { x: 480, y: 385, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
+  if (!storySeen) startIntro();
 }
 
 // ---------- Customers ----------
@@ -399,6 +454,7 @@ addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 const canvas = $('game'), ctx = canvas.getContext('2d');
 let clickTarget = null;
 canvas.addEventListener('pointerdown', e => {
+  if (introStep >= 0 && !storySeen) { advanceIntro(); return; }
   const r = canvas.getBoundingClientRect();
   clickTarget = { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
 });
@@ -500,8 +556,11 @@ function update(dt) {
   $('actionBtn').textContent = st === 'buy' ? 'Haggle' : st === 'sell' ? 'Ring up' : 'Stock books';
   if (flashT > 0) flashT -= dt;
 
-  // HUD
-  $('coins').textContent = coins;
+  refreshHUD();
+}
+
+function refreshHUD() {
+  $('coins').textContent = (introStep >= 0 && !storySeen) ? Math.round(introCoins) : coins;
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
   $('carry').textContent = carry.length ? carry.map(b => (b.genre === 'green' ? '🟩' : '🟪') + (b.special ? '✦' : '')).join(' ') : '—';
@@ -531,6 +590,7 @@ function endDay() {
 }
 $('restartBtn').addEventListener('click', () => { reset(); $('startPanel').style.display = 'block'; });
 $('startBtn').addEventListener('click', () => { $('startPanel').style.display = 'none'; running = true; musicStart(); sfx('sale'); });
+$('introBar').addEventListener('click', advanceIntro);
 
 // ---------- Draw ----------
 function drawCustomer(c) {
@@ -743,6 +803,14 @@ function draw() {
     }
     if (c.state === 'leaveMad') { ctx.fillStyle = '#e06868'; ctx.font = '17px serif'; ctx.fillText('💢', c.x, c.y - 60); }
   }
+  // the landlord (opening sequence only) — shady suit, fedora, deed in hand
+  if (landlord) {
+    drawCustomer(landlord);
+    ctx.fillStyle = '#211d26'; ctx.fillRect(landlord.x - 15, landlord.y - 46, 30, 5);      // fedora brim
+    ctx.fillRect(landlord.x - 9, landlord.y - 57, 18, 11);                                   // fedora crown
+    ctx.fillStyle = '#f3e9d2'; ctx.fillRect(landlord.x + 17, landlord.y - 8, 10, 13);       // the deed
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(landlord.x + 19, landlord.y - 4, 6, 1.4); ctx.fillRect(landlord.x + 19, landlord.y - 1, 6, 1.4);
+  }
   // player (the bookseller)
   drawBookseller();
   carry.forEach((b, i) => drawBook(player.x - 16 + i * 11, player.y - 60, b.genre, b.special, 0.7));
@@ -755,13 +823,14 @@ let lastTs = 0;
 function loop(ts) {
   const dt = Math.min(0.05, (ts - lastTs) / 1000 || 0);
   lastTs = ts;
+  updateIntro(dt);
   update(dt);
   requestAnimationFrame(loop);
 }
 // A refresh / back-forward-cache restore can resurrect a stale DOM with panels
 // in odd states — on a persisted pageshow, force one clean opening state.
 addEventListener('pageshow', e => {
-  if (e.persisted) { reset(); $('startPanel').style.display = 'block'; draw(); }
+  if (e.persisted) { reset(); if (storySeen) $('startPanel').style.display = 'block'; draw(); }
 });
 reset();
 draw();
