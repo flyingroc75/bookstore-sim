@@ -97,8 +97,8 @@
   </div>
 
   <div class="panel" id="bankruptPanel" style="display:none;">
-    <h2>💸 Bankrupt!</h2>
-    <p>You can't make the rent. The deed goes back to the Mysterious Man… unless. Unless <i>you</i> can find a buyer first.</p>
+    <h2 id="bankruptTitle">💸 Bankrupt!</h2>
+    <p id="bankruptBody">You can't make the rent. The deed goes back to the Mysterious Man… unless. Unless <i>you</i> can find a buyer first.</p>
     <div class="row"><button class="primary" id="bankruptOk">One last idea… ▸</button></div>
   </div>
 
@@ -160,7 +160,16 @@ const OBSTACLES = [ SHELF.green, SHELF.purple, BUY_COUNTER, SELL_COUNTER ];
 let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
 let day = 1, dayStartCoins = 200;
 let reputation = 25;                 // ⭐ start ~25; −1 per declined sale / patience walkout
-function repDown() { reputation = Math.max(1, reputation - 1); }
+function repDown() {
+  reputation = Math.max(0, reputation - 1);
+  refreshHUD();
+  if (reputation <= 0 && running && !over) gameOverRep();
+}
+function gameOverRep() {
+  over = true; running = false; haggle = null;
+  $('hagglePanel').style.display = 'none';   // close whatever was mid-flight; refreshHUD() settles the HUD
+  showBankrupt('rep');
+}
 function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0, rentPaid: 0 }; }
 let stats, haggle; // haggle = { seller, offer }
 let startNetWorth = 0;
@@ -549,7 +558,7 @@ function update(dt) {
   dayT += dt;
   if (dayT >= DAY_LEN) { endDay(); return; }
   spawnT -= dt;
-  if (spawnT <= 0) { spawnCustomer(); spawnT = Math.max(4.5, 8.5 - dayT * 0.012) * (25 / reputation) * rf(0.8, 1.2); }
+  if (spawnT <= 0) { spawnCustomer(); spawnT = Math.max(4.5, 8.5 - dayT * 0.012) * (25 / Math.max(reputation, 8)) * rf(0.8, 1.2); }   // slowdown floored at ~3x
 
   // player movement
   let mx = 0, my = 0;
@@ -629,7 +638,7 @@ function refreshHUD() {
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
   $('rep').textContent = reputation;
-  $('repFace').textContent = reputation >= 40 ? '😀' : reputation >= 30 ? '🙂' : reputation >= 18 ? '😐' : reputation >= 8 ? '🙁' : '😠';
+  $('repFace').textContent = reputation <= 0 ? '💀' : reputation >= 40 ? '😀' : reputation >= 30 ? '🙂' : reputation >= 18 ? '😐' : reputation >= 8 ? '🙁' : '😠';
 }
 
 // Multi-day runs: the shop's state carries over. At closing, everything the
@@ -713,22 +722,34 @@ const ENDING_LINES = [
   { who: 'YOU', line: 'Deal.' },
   { who: 'UNSUSPECTING BUYER', line: "…It's a bit run-down. And — wait, where did he go?" }
 ];
+const rentDue = () => 400 + 100 * (day / 3);   // 500 in week 1, +100 each week
 function showRent() {
-  $('rentBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “End of the week. Rent\'s due: <b>500</b> ' + COIN + '. Cash.”<br><br>You have <b>' + coins + '</b> ' + COIN + ' in the till.';
-  const canPay = coins >= 500;
+  const rent = rentDue();
+  $('rentBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “End of the week. Rent\'s due: <b>' + rent + '</b> ' + COIN + '. Cash.”<br><br>You have <b>' + coins + '</b> ' + COIN + ' in the till.';
+  const canPay = coins >= rent;
   $('rentPay').style.display = canPay ? '' : 'none';
-  $('rentPay').textContent = 'Pay 500 ' + 'rent';
+  $('rentPay').textContent = 'Pay ' + rent + ' rent';
   $('rentFace').style.display = canPay ? 'none' : '';
   $('rentPanel').style.display = 'block';
 }
 $('rentPay').addEventListener('click', () => {
-  coins -= 500; stats.rentPaid = 500; refreshHUD();
+  const rent = rentDue(); coins -= rent; stats.rentPaid = rent; refreshHUD();
   $('rentPanel').style.display = 'none';
   $('winPanel').style.display = 'block';
   spawnConfetti();
 });
 $('winOk').addEventListener('click', () => { $('winPanel').style.display = 'none'; composeTally(); });
-$('rentFace').addEventListener('click', () => { $('rentPanel').style.display = 'none'; $('bankruptPanel').style.display = 'block'; });
+$('rentFace').addEventListener('click', () => { $('rentPanel').style.display = 'none'; showBankrupt('rent'); });
+function showBankrupt(kind) {
+  if (kind === 'rep') {
+    $('bankruptTitle').textContent = '🪦 Reputation: zero';
+    $('bankruptBody').innerHTML = 'Word travels fast in this town. No sellers, no buyers — nobody crosses your threshold anymore. The shop is finished… unless <i>you</i> can find a buyer first.';
+  } else {
+    $('bankruptTitle').textContent = '💸 Bankrupt!';
+    $('bankruptBody').innerHTML = "You can't make the rent. The deed goes back to the Mysterious Man… unless. Unless <i>you</i> can find a buyer first.";
+  }
+  $('bankruptPanel').style.display = 'block';
+}
 $('bankruptOk').addEventListener('click', () => { $('bankruptPanel').style.display = 'none'; startEnding(); });
 $('startOverBtn').addEventListener('click', () => {
   $('endPanel').style.display = 'none';
