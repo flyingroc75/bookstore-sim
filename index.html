@@ -56,8 +56,6 @@
 <div id="hud">
   <span><span class="coin"></span> <b id="coins">500</b></span>
   <span>⏳ Day: <b id="clock">4:00</b></span>
-  <span><span class="swatch" style="background:#3fae5a"></span>Non-fiction shelf: <b id="shelfG">0</b></span>
-  <span><span class="swatch" style="background:#8b4fc4"></span>Fiction shelf: <b id="shelfP">0</b></span>
   <span>🎒 Carrying: <b id="carry">—</b></span>
   <span><button id="musicBtn" style="padding:4px 10px; font-size:13px;">🔊 Music on</button></span>
 </div>
@@ -495,8 +493,6 @@ function update(dt) {
   $('coins').textContent = coins;
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
-  $('shelfG').textContent = shelfStock.green.length + '/' + SHELF_CAP + (shelfStock.green.some(b => b.special) ? ' (✦' + shelfStock.green.filter(b => b.special).length + ')' : '');
-  $('shelfP').textContent = shelfStock.purple.length + '/' + SHELF_CAP + (shelfStock.purple.some(b => b.special) ? ' (✦' + shelfStock.purple.filter(b => b.special).length + ')' : '');
   $('carry').textContent = carry.length ? carry.map(b => (b.genre === 'green' ? '🟩' : '🟪') + (b.special ? '✦' : '')).join(' ') : '—';
 }
 
@@ -680,6 +676,7 @@ function draw() {
       ctx.fillStyle = b.special ? '#d4af37' : SPINE_SHADES[g][i % SPINE_SHADES[g].length];
       ctx.fillRect(bx, s.y + s.h - 8 - bh, bw, bh);
       ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(bx, s.y + s.h - 8 - bh + 4, bw, 1.8);
+      if (b.special) { ctx.fillStyle = '#fff3b0'; ctx.font = '9px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', bx + bw / 2, s.y + s.h - 14 - bh); }
     });
     // hanging sign
     ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.beginPath();
