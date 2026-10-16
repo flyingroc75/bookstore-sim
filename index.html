@@ -78,6 +78,12 @@
     <div id="haggleReveal"></div>
   </div>
 
+  <div class="panel" id="restockPanel" style="display:none;">
+    <h2>🚪 A knock at the door…</h2>
+    <p id="restockBody"></p>
+    <div class="row"><button class="primary" id="restockYes">Deal</button><button id="restockNo">No thanks</button></div>
+  </div>
+
   <div class="panel" id="tallyPanel">
     <h2>🌙 Closing Tally</h2>
     <p id="tallyBody"></p>
@@ -131,7 +137,7 @@ let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
 let day = 1, dayStartCoins = 500;
 let reputation = 25;                 // ⭐ start ~25; −1 per declined sale / patience walkout
 function repDown() { reputation = Math.max(1, reputation - 1); }
-function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0 }; }
+function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0 }; }
 let stats, haggle; // haggle = { seller, offer }
 let startNetWorth = 0;
 let player;
@@ -617,6 +623,41 @@ function endDay() {
     else if (carry.length < CARRY_MAX) carry.push(b);
     else { stats.wasted++; stats.wastedValue += b.sellPrice; }
   }
+  // The Mysterious Man's restock offer: if the shelves end the day less than
+  // 2/3 full, he offers to fill every empty slot at 30 a book — books that
+  // sell for 25. He appears BEFORE the tally so the numbers include the deal.
+  const shelfTotal = shelfStock.green.length + shelfStock.purple.length;
+  const emptySlots = (SHELF_CAP * 2) - shelfTotal;
+  if (shelfTotal < (SHELF_CAP * 2) * 2 / 3 && emptySlots > 0) {
+    pendingRestock = { empty: emptySlots, total: emptySlots * 30 };
+    $('restockBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “Psst. Shelves are looking bare — <b>' + emptySlots + ' empty spaces</b>. I\'ll fill every one tonight: <b>30</b> ' + COIN + ' a book, and they sell for <b>25</b>. That\'s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”';
+    $('restockYes').textContent = coins >= pendingRestock.total ? 'Deal — pay ' + pendingRestock.total : 'You can\'t afford ' + pendingRestock.total;
+    $('restockYes').disabled = coins < pendingRestock.total;
+    $('restockPanel').style.display = 'block';
+    return;
+  }
+  composeTally();
+}
+
+let pendingRestock = null;
+$('restockYes').addEventListener('click', () => {
+  if (!pendingRestock) return;
+  coins -= pendingRestock.total;
+  stats.restocked = pendingRestock.empty; stats.restockCost = pendingRestock.total;
+  for (const g of ['green', 'purple'])
+    while (shelfStock[g].length < SHELF_CAP) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = 30; shelfStock[g].push(b); }
+  pendingRestock = null;
+  $('restockPanel').style.display = 'none';
+  composeTally();
+});
+$('restockNo').addEventListener('click', () => {
+  stats.restockDeclined = pendingRestock ? pendingRestock.empty : 0;
+  pendingRestock = null;
+  $('restockPanel').style.display = 'none';
+  composeTally();
+});
+
+function composeTally() {
   const profit = coins - dayStartCoins;
   const leftBooks = shelfStock.green.concat(shelfStock.purple, carry);
   const invValue = leftBooks.reduce((a, b) => a + b.sellPrice, 0);
@@ -627,6 +668,8 @@ function endDay() {
     '🌙 <b>Day ' + day + ' complete.</b> The shop keeps everything — coins, stock, and what\'s in your arms — into Day ' + (day + 1) + '.<br><br>' +
     'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b> (cost of those books: ' + stats.costOfSold + ' → profit on sold books <b style="color:' + (soldProfit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (soldProfit >= 0 ? '+' : '') + soldProfit + '</b>)<br>' +
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
+    (stats.restocked ? '🧥 The Mysterious Man restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
+    (stats.restockDeclined ? '🧥 You turned down the Mysterious Man\'s restock (' + stats.restockDeclined + ' empty spaces left bare)<br>' : '') +
     'Wasted at closing (no shelf or arm space): <b>' + stats.wasted + '</b> books' + (stats.wasted ? ' worth <b>' + stats.wastedValue + ' 🪙</b> at sale value' : '') + '<br>' +
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
     'Walkouts — not in stock: <b>' + stats.walkStock + '</b><br>' +
