@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bookstore Sim — Prototype v0</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#2b2118; font-family: Georgia, 'Times New Roman', serif; color:#f3e9d2;
+         display:flex; flex-direction:column; align-items:center; padding:10px; }
+  h1 { font-size:20px; letter-spacing:1px; margin:4px 0 8px; color:#e8c87a; }
+  #hud { display:flex; gap:22px; font-size:16px; margin-bottom:8px; flex-wrap:wrap; justify-content:center; }
+  #hud b { color:#e8c87a; }
+  #wrap { position:relative; }
+  canvas { background:#4a3826; border:3px solid #8a6d3f; border-radius:8px; max-width:96vw; height:auto; touch-action:none; }
+  #hint { margin-top:8px; font-size:15px; min-height:20px; color:#ffd98a; text-align:center; }
+  #help { margin-top:4px; font-size:13px; color:#c9b18c; text-align:center; max-width:900px; line-height:1.5; }
+  .panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+           background:#241a10; border:2px solid #e8c87a; border-radius:10px; padding:20px 24px;
+           min-width:340px; max-width:92%; box-shadow:0 10px 40px rgba(0,0,0,.6); display:none; z-index:5; }
+  .panel h2 { color:#e8c87a; font-size:18px; margin-bottom:10px; }
+  .panel p { margin:5px 0; font-size:15px; }
+  .panel .row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center; }
+  button { font-family:inherit; font-size:15px; padding:8px 14px; border-radius:6px; border:1px solid #8a6d3f;
+           background:#5a4326; color:#f3e9d2; cursor:pointer; }
+  button:hover { background:#6f5530; }
+  button.primary { background:#8a6d1f; border-color:#e8c87a; font-weight:bold; }
+  button:disabled { opacity:.4; cursor:default; }
+  #offerVal { font-size:22px; color:#ffd98a; min-width:70px; text-align:center; }
+  #actionBtn { position:absolute; right:14px; bottom:14px; font-size:17px; padding:12px 20px; display:none; z-index:4;
+               background:#c07f3a; border:2px solid #ffd98a; font-weight:bold; color:#fff8ea;
+               box-shadow:0 4px 16px rgba(0,0,0,.55); }
+  #actionBtn:hover { background:#d18f47; }
+  .swatch { display:inline-block; width:12px; height:16px; border-radius:2px; vertical-align:-2px; margin-right:5px; border:1px solid rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<h1>📚 Bookstore Sim — Prototype</h1>
+<div id="hud">
+  <span>🪙 <b id="coins">500</b></span>
+  <span>⏳ Day: <b id="clock">4:00</b></span>
+  <span><span class="swatch" style="background:#3fae5a"></span>Non-fiction shelf: <b id="shelfG">0</b></span>
+  <span><span class="swatch" style="background:#8b4fc4"></span>Fiction shelf: <b id="shelfP">0</b></span>
+  <span>🎒 Carrying: <b id="carry">—</b></span>
+</div>
+<div id="wrap">
+  <canvas id="game" width="960" height="600"></canvas>
+  <button id="actionBtn">Interact</button>
+
+  <div class="panel" id="hagglePanel">
+    <h2 id="haggleTitle">Haggle</h2>
+    <p id="haggleBook"></p>
+    <p>Your appraisal: <b id="haggleRange"></b></p>
+    <p>Seller asks: <b id="haggleAsk"></b> · Their patience is draining…</p>
+    <div class="row">
+      <button data-adj="-10">−10</button><button data-adj="-1">−1</button>
+      <span id="offerVal">0</span>
+      <button data-adj="1">+1</button><button data-adj="10">+10</button>
+    </div>
+    <div class="row">
+      <button class="primary" id="offerBtn">Make offer</button>
+      <button id="declineBtn">Decline</button>
+    </div>
+    <p id="haggleMsg" style="color:#ffd98a; min-height:18px;"></p>
+  </div>
+
+  <div class="panel" id="tallyPanel">
+    <h2>🌙 Closing Tally</h2>
+    <p id="tallyBody"></p>
+    <div class="row"><button class="primary" id="restartBtn">Open a new day</button></div>
+  </div>
+
+  <div class="panel" id="startPanel" style="display:block;">
+    <h2>📚 Opening Day</h2>
+    <p>You have <b>500 coins</b> and a stocked shop: 6 non-fiction (green) and 6 fiction (purple) on the shelves.</p>
+    <p><b>Buyers</b> go to their genre's shelf, take a book, then queue at the <b>sell counter</b> (right) — walk there to ring them up. Each book sells at its own price, fixed but hidden from you: at the buy counter you only ever see a <b>range</b>.</p>
+    <p><b>Sellers</b> queue at the <b>buy counter</b> (left) — haggle with them there. Books you buy go in your arms — carry them to the matching shelf to stock them.</p>
+    <p>Everyone has a patience meter. Too slow, or the shelf is empty, and they walk out. The day lasts <b>4 minutes</b>.</p>
+    <p>Walk by <b>clicking / tapping</b> where you want to go, and use the big <b>action button</b> when it appears.</p>
+    <div class="row"><button class="primary" id="startBtn">Open the shop</button></div>
+  </div>
+</div>
+<div id="hint"></div>
+<div id="help">Every book has its own hidden sell price — you only ever see an appraisal range. Sellers may open above the true value. Profit is made or lost at the buy counter.</div>
+
+<script>
+"use strict";
+// ---------- Constants ----------
+const DAY_LEN = 240;                 // one day = 4 minutes
+const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4' };
+const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction' };
+const CARRY_MAX = 4;
+
+// ---------- Layout ----------
+const W = 960, H = 600;
+const SHELF = {
+  green:  { x: 110, y: 56,  w: 320, h: 54 },
+  purple: { x: 530, y: 56,  w: 320, h: 54 }
+};
+const BUY_COUNTER  = { x: 90,  y: 452, w: 300, h: 52 };
+const SELL_COUNTER = { x: 570, y: 452, w: 300, h: 52 };
+const DOOR = { x: 452, y: 588 };
+const OBSTACLES = [ SHELF.green, SHELF.purple, BUY_COUNTER, SELL_COUNTER ];
+
+// ---------- State ----------
+let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
+let stats, haggle; // haggle = { seller, offer }
+let player;
+
+function makeBook(genre, special) {
+  // 'value' is the book's true sell price — fixed per book, but HIDDEN from the
+  // player, who only ever sees an appraisal range around it.
+  let value;
+  if (special) value = genre === 'green' ? rnd(90, 140) : rnd(120, 190);
+  else         value = genre === 'green' ? rnd(20, 38)  : rnd(30, 52);
+  return { genre, special: !!special, value, sellPrice: value };
+}
+function appraisalRange(book) {
+  const spread = book.special ? 0.45 : 0.35;   // specials are the bigger gamble
+  return [Math.max(1, Math.round(book.value * (1 - spread))), Math.round(book.value * (1 + spread))];
+}
+function rnd(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
+function rf(a, b) { return a + Math.random() * (b - a); }
+
+function reset() {
+  coins = 500;
+  shelfStock = { green: [], purple: [] };
+  for (let i = 0; i < 6; i++) { shelfStock.green.push(makeBook('green', false)); shelfStock.purple.push(makeBook('purple', false)); }
+  carry = [];
+  customers = [];
+  dayT = 0; spawnT = 1.2; running = false; over = false; haggle = null;
+  stats = { sold: 0, revenue: 0, bought: 0, spent: 0, walkWait: 0, walkStock: 0, turnedAway: 0 };
+  player = { x: 480, y: 330, speed: 235, target: null };
+  document.getElementById('tallyPanel').style.display = 'none';
+  document.getElementById('hagglePanel').style.display = 'none';
+}
+
+// ---------- Customers ----------
+let cid = 0;
+function spawnCustomer() {
+  const isBuyer = Math.random() < 0.6;   // sellers = 40% of arrivals (was 33%, +20%)
+  const genre = Math.random() < 0.5 ? 'green' : 'purple';
+  const c = { id: cid++, x: DOOR.x + rf(-14, 14), y: DOOR.y, genre,
+              patience: 100, state: 'enter', book: null, queueIdx: 0 };
+  // --- sprite look (random per customer) ---
+  const SKINS = ['#f2c894', '#e0ac69', '#c68850', '#8d5524', '#ffdbac'];
+  const HAIRS = ['#2b2b2b', '#5a3a1a', '#8a6d3f', '#b5522a', '#d9d9d9', '#3a5a8c'];
+  const COATS_B = ['#c45a3c', '#d9a441', '#7a9e43', '#4f7fa0', '#c48bb0'];
+  const COATS_S = ['#5a6e8c', '#6b5a7a', '#4f6e5a', '#8c7355', '#707880'];
+  c.look = {
+    skin: SKINS[rnd(0, SKINS.length - 1)],
+    hair: HAIRS[rnd(0, HAIRS.length - 1)],
+    hairStyle: rnd(0, 3),
+    coat: (isBuyer ? COATS_B : COATS_S)[rnd(0, 4)],
+    flip: Math.random() < 0.5
+  };
+  if (isBuyer) { c.kind = 'buyer'; }
+  else {
+    c.kind = 'seller';
+    c.book = makeBook(genre, Math.random() < 0.12);
+    c.floor = Math.max(3, Math.round(c.book.value * rf(0.55, 0.85)));
+    c.ask = Math.round(c.book.value * rf(1.0, 1.35));   // may open ABOVE the book's true sell value
+  }
+  customers.push(c);
+}
+const buyQueue  = () => customers.filter(c => c.kind === 'seller' && (c.state === 'toBuy' || c.state === 'haggle'));
+const sellQueue = () => customers.filter(c => c.kind === 'buyer'  && c.state === 'toSell');
+function queuePos(counter, idx, fromTop) {
+  return { x: counter.x + 40 + idx * 62, y: counter.y - 34 };
+}
+function shelfSpot(genre, idx) {
+  const s = SHELF[genre];
+  return { x: s.x + 36 + (idx % 6) * 48, y: s.y + s.h + 30 };
+}
+
+// ---------- Interaction ----------
+function nearStation() {
+  const p = player;
+  if (Math.abs(p.y - (BUY_COUNTER.y - 20)) < 66 && p.x > BUY_COUNTER.x - 30 && p.x < BUY_COUNTER.x + BUY_COUNTER.w + 30) return 'buy';
+  if (Math.abs(p.y - (SELL_COUNTER.y - 20)) < 66 && p.x > SELL_COUNTER.x - 30 && p.x < SELL_COUNTER.x + SELL_COUNTER.w + 30) return 'sell';
+  for (const g of ['green', 'purple']) {
+    const s = SHELF[g];
+    if (p.y > s.y && p.y < s.y + s.h + 74 && p.x > s.x - 24 && p.x < s.x + s.w + 24) return 'shelf-' + g;
+  }
+  return null;
+}
+function frontSeller() { const q = buyQueue(); return q.length ? q[0] : null; }
+function frontBuyer()  { const q = sellQueue(); return q.length ? q[0] : null; }
+
+function doInteract() {
+  if (!running || over || haggle) return;
+  const st = nearStation();
+  if (st === 'buy') {
+    const s = frontSeller();
+    if (s) openHaggle(s);
+  } else if (st === 'sell') {
+    const b = frontBuyer();
+    if (b && b.book) {
+      coins += b.book.sellPrice; stats.sold++; stats.revenue += b.book.sellPrice;
+      b.state = 'leaveHappy';
+      flash('+' + b.book.sellPrice + ' 🪙');
+    }
+  } else if (st && st.startsWith('shelf-')) {
+    const g = st.slice(6);
+    const before = carry.length;
+    carry = carry.filter(bk => { if (bk.genre === g) { shelfStock[g].push(bk); return false; } return true; });
+    if (carry.length < before) flash('Stocked ' + GENRE_NAME[g]);
+  }
+}
+
+// ---------- Haggling ----------
+const $ = id => document.getElementById(id);
+function openHaggle(seller) {
+  haggle = { seller, offer: Math.max(1, Math.floor(seller.ask * 0.6)) };
+  seller.state = 'haggle';
+  $('haggleTitle').textContent = 'Haggle — ' + GENRE_NAME[seller.book.genre] + (seller.book.special ? ' ✦ SPECIAL' : '');
+  $('haggleBook').innerHTML = 'Book: <span class="swatch" style="background:' + GENRE_COLOR[seller.book.genre] + '"></span>' +
+    GENRE_NAME[seller.book.genre] + (seller.book.special ? ' (special edition!)' : '') +
+    ' · Its true sell price is hidden — you only get a range. Pay more than it\'s worth and you lose money at the till.';
+  const [lo, hi] = appraisalRange(seller.book);
+  $('haggleRange').textContent = lo + ' – ' + hi + ' coins';
+  $('haggleAsk').textContent = seller.ask;
+  $('haggleMsg').textContent = '';
+  syncOffer();
+  $('hagglePanel').style.display = 'block';
+}
+function syncOffer() { $('offerVal').textContent = haggle ? haggle.offer : 0; $('offerBtn').disabled = !haggle || haggle.offer > coins; }
+function closeHaggle(result) {
+  const s = haggle.seller;
+  if (result === 'deal') { s.state = 'leaveHappy'; }
+  else if (result === 'decline') { s.state = 'leaveMad'; stats.turnedAway++; }
+  haggle = null;
+  $('hagglePanel').style.display = 'none';
+}
+document.querySelectorAll('#hagglePanel [data-adj]').forEach(btn => {
+  btn.addEventListener('click', () => { if (!haggle) return; haggle.offer = Math.max(1, haggle.offer + (+btn.dataset.adj)); syncOffer(); });
+});
+$('offerBtn').addEventListener('click', () => {
+  if (!haggle) return;
+  const s = haggle.seller, offer = haggle.offer;
+  if (offer >= s.floor) {
+    if (carry.length >= CARRY_MAX) { $('haggleMsg').textContent = 'Your arms are full (max ' + CARRY_MAX + '). Stock something first!'; return; }
+    coins -= offer; stats.bought++; stats.spent += offer;
+    carry.push(s.book);
+    flash('Bought for ' + offer + ' 🪙');
+    closeHaggle('deal');
+  } else {
+    s.patience -= 10;
+    s.ask = Math.max(s.floor + 3, Math.round((s.ask + offer) / 2));
+    $('haggleAsk').textContent = s.ask;
+    $('haggleMsg').textContent = offer >= s.floor * 0.85 ? 'Close… they counter at ' + s.ask + '.' : 'They shake their head. Counter: ' + s.ask + '.';
+    if (s.patience <= 0) { closeHaggle('storm'); s.state = 'leaveMad'; stats.walkWait++; }
+  }
+});
+$('declineBtn').addEventListener('click', () => { if (haggle) closeHaggle('decline'); });
+
+// ---------- Flash message ----------
+let flashTxt = '', flashT = 0;
+function flash(t) { flashTxt = t; flashT = 2.2; }
+
+// ---------- Update ----------
+const keys = {};
+addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key.toLowerCase() === 'e' || e.key === ' ') { doInteract(); e.preventDefault(); }
+  if (e.key.toLowerCase() === 'r' && over) { reset(); $('startPanel').style.display = 'block'; }
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+const canvas = $('game'), ctx = canvas.getContext('2d');
+let clickTarget = null;
+canvas.addEventListener('pointerdown', e => {
+  const r = canvas.getBoundingClientRect();
+  clickTarget = { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
+});
+$('actionBtn').addEventListener('click', doInteract);
+
+function moveToward(o, tx, ty, speed, dt) {
+  const dx = tx - o.x, dy = ty - o.y, d = Math.hypot(dx, dy);
+  if (d < 4) return true;
+  const step = Math.min(d, speed * dt);
+  o.x += dx / d * step; o.y += dy / d * step;
+  return d - step < 4;
+}
+function collide(p) {
+  for (const o of OBSTACLES) {
+    if (p.x > o.x - 14 && p.x < o.x + o.w + 14 && p.y > o.y - 14 && p.y < o.y + o.h + 14) {
+      const left = Math.abs(p.x - (o.x - 14)), right = Math.abs(p.x - (o.x + o.w + 14));
+      const top = Math.abs(p.y - (o.y - 14)), bot = Math.abs(p.y - (o.y + o.h + 14));
+      const m = Math.min(left, right, top, bot);
+      if (m === left) p.x = o.x - 14; else if (m === right) p.x = o.x + o.w + 14;
+      else if (m === top) p.y = o.y - 14; else p.y = o.y + o.h + 14;
+    }
+  }
+  p.x = Math.max(20, Math.min(W - 20, p.x)); p.y = Math.max(20, Math.min(H - 14, p.y));
+}
+
+function update(dt) {
+  if (!running || over) return;
+  dayT += dt;
+  if (dayT >= DAY_LEN) { endDay(); return; }
+  spawnT -= dt;
+  if (spawnT <= 0) { spawnCustomer(); spawnT = Math.max(4.5, 8.5 - dayT * 0.012) * rf(0.8, 1.2); }
+
+  // player movement
+  let mx = 0, my = 0;
+  if (keys['w'] || keys['arrowup']) my -= 1;
+  if (keys['s'] || keys['arrowdown']) my += 1;
+  if (keys['a'] || keys['arrowleft']) mx -= 1;
+  if (keys['d'] || keys['arrowright']) mx += 1;
+  if (mx || my) { clickTarget = null; const n = Math.hypot(mx, my); player.x += mx / n * player.speed * dt; player.y += my / n * player.speed * dt; }
+  else if (clickTarget) { if (moveToward(player, clickTarget.x, clickTarget.y, player.speed, dt)) clickTarget = null; }
+  if (!haggle) collide(player); else collide(player);
+
+  // customers
+  const bq = buyQueue(), sq = sellQueue();
+  let shelfWaiters = { green: 0, purple: 0 };
+  for (const c of customers) {
+    if (c.state === 'leaveHappy' || c.state === 'leaveMad') { moveToward(c, DOOR.x, DOOR.y + 26, 150, dt); continue; }
+    if (c.kind === 'seller') {
+      if (c.state === 'enter') { c.state = 'toBuy'; }
+      if (c.state === 'toBuy' || c.state === 'haggle') {
+        const idx = bq.indexOf(c);
+        const pos = queuePos(BUY_COUNTER, Math.max(0, idx), true);
+        if (c.state === 'toBuy') moveToward(c, pos.x, pos.y, 125, dt);
+        c.patience -= dt * (c.state === 'haggle' ? 2.0 : 1.5);
+        if (c.patience <= 0) {
+          if (haggle && haggle.seller === c) closeHaggle('storm');
+          c.state = 'leaveMad'; stats.walkWait++;
+        }
+      }
+    } else { // buyer
+      if (c.state === 'enter') c.state = 'toShelf';
+      if (c.state === 'toShelf') {
+        const pos = shelfSpot(c.genre, shelfWaiters[c.genre]++);
+        const arrived = moveToward(c, pos.x, pos.y, 125, dt);
+        if (arrived) {
+          if (shelfStock[c.genre].length > 0) { c.book = shelfStock[c.genre].shift(); c.state = 'toSell'; }
+          else c.state = 'waitShelf';
+        }
+      } else if (c.state === 'waitShelf') {
+        const pos = shelfSpot(c.genre, shelfWaiters[c.genre]++);
+        moveToward(c, pos.x, pos.y, 125, dt);
+        if (shelfStock[c.genre].length > 0) { c.book = shelfStock[c.genre].shift(); c.state = 'toSell'; }
+        else { c.patience -= dt * 3.2; if (c.patience <= 0) { c.state = 'leaveMad'; stats.walkStock++; } }
+      } else if (c.state === 'toSell') {
+        const idx = sq.indexOf(c);
+        const pos = queuePos(SELL_COUNTER, Math.max(0, idx), true);
+        moveToward(c, pos.x, pos.y, 125, dt);
+        c.patience -= dt * 1.5;
+        if (c.patience <= 0) { // leaves, book goes back on the shelf
+          shelfStock[c.genre].push(c.book); c.book = null; c.state = 'leaveMad'; stats.walkWait++;
+        }
+      }
+    }
+  }
+  customers = customers.filter(c => !(c.y > H + 16 && (c.state === 'leaveHappy' || c.state === 'leaveMad')));
+
+  // hint + action button
+  const st = nearStation();
+  let hint = '', canAct = false;
+  if (st === 'buy') { const s = frontSeller(); hint = s ? 'Haggle with the seller' : 'Buy counter: no seller waiting'; canAct = !!s; }
+  else if (st === 'sell') { const b = frontBuyer(); hint = b ? 'Ring up the sale (' + b.book.sellPrice + ' 🪙)' : 'Sell counter: no buyer waiting'; canAct = !!b; }
+  else if (st && st.startsWith('shelf-')) {
+    const g = st.slice(6);
+    canAct = carry.some(b => b.genre === g);
+    hint = canAct ? 'Stock your ' + GENRE_NAME[g] + ' books' : GENRE_NAME[g] + ' shelf (' + shelfStock[g].length + ' books)';
+  }
+  $('hint').textContent = hint;
+  $('actionBtn').style.display = canAct ? 'block' : 'none';
+  $('actionBtn').textContent = st === 'buy' ? 'Haggle' : st === 'sell' ? 'Ring up' : 'Stock books';
+  if (flashT > 0) flashT -= dt;
+
+  // HUD
+  $('coins').textContent = coins;
+  const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
+  $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
+  $('shelfG').textContent = shelfStock.green.length + (shelfStock.green.some(b => b.special) ? ' (✦' + shelfStock.green.filter(b => b.special).length + ')' : '');
+  $('shelfP').textContent = shelfStock.purple.length + (shelfStock.purple.some(b => b.special) ? ' (✦' + shelfStock.purple.filter(b => b.special).length + ')' : '');
+  $('carry').textContent = carry.length ? carry.map(b => (b.genre === 'green' ? '🟩' : '🟪') + (b.special ? '✦' : '')).join(' ') : '—';
+}
+
+function endDay() {
+  over = true; running = false;
+  if (haggle) closeHaggle('decline');
+  const profit = coins - 500;
+  $('tallyBody').innerHTML =
+    'Books sold: <b>' + stats.sold + '</b> (+' + stats.revenue + ' 🪙)<br>' +
+    'Books bought: <b>' + stats.bought + '</b> (−' + stats.spent + ' 🪙)<br>' +
+    'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
+    'Walkouts — not in stock: <b>' + stats.walkStock + '</b><br>' +
+    'Sellers turned away: <b>' + stats.turnedAway + '</b><br>' +
+    'Books left on shelves: <b>' + (shelfStock.green.length + shelfStock.purple.length) + '</b> · In your arms: <b>' + carry.length + '</b><br><br>' +
+    'Final coins: <b>' + coins + '</b> · Day profit: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
+  $('tallyPanel').style.display = 'block';
+}
+$('restartBtn').addEventListener('click', () => { reset(); $('startPanel').style.display = 'block'; });
+$('startBtn').addEventListener('click', () => { $('startPanel').style.display = 'none'; running = true; });
+
+// ---------- Draw ----------
+function drawCustomer(c) {
+  const L = c.look, x = c.x, y = c.y;
+  const moving = !(c.state === 'haggle' || c.state === 'waitShelf');
+  const ph = moving ? Math.sin(performance.now() / 110 + c.id * 1.7) : 0;
+  const bob = moving ? Math.abs(Math.sin(performance.now() / 110 + c.id * 1.7)) * 1.6 : 0;
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(x, y + 15, 13, 4, 0, 0, Math.PI * 2); ctx.fill();
+  // legs (walk cycle)
+  ctx.fillStyle = '#3a3230';
+  ctx.fillRect(x - 7 + ph * 2.4, y + 6 - bob * 0.4, 5, 9);
+  ctx.fillRect(x + 2 - ph * 2.4, y + 6 - bob * 0.4, 5, 9);
+  // coat / body
+  ctx.fillStyle = L.coat;
+  ctx.beginPath();
+  ctx.moveTo(x - 9, y + 8); ctx.lineTo(x - 7, y - 8 - bob); ctx.lineTo(x + 7, y - 8 - bob); ctx.lineTo(x + 9, y + 8); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x - 7.5, y + 1 - bob, 15, 2.4); // belt
+  // arms
+  ctx.fillStyle = L.coat;
+  ctx.fillRect(x - 12, y - 7 - bob, 3.6, 11);
+  ctx.fillRect(x + 8.4, y - 7 - bob, 3.6, 11);
+  // buyer tote bag in their genre colour
+  if (c.kind === 'buyer') {
+    ctx.fillStyle = GENRE_COLOR[c.genre];
+    ctx.fillRect(x - 15.5, y + 1 - bob, 7, 8);
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.strokeRect(x - 15.5, y + 1 - bob, 7, 8);
+  }
+  // head
+  const hy = y - 15 - bob;
+  ctx.fillStyle = L.skin;
+  ctx.beginPath(); ctx.arc(x, hy, 7, 0, Math.PI * 2); ctx.fill();
+  // hair by style
+  ctx.fillStyle = L.hair;
+  if (L.hairStyle === 0) { ctx.beginPath(); ctx.arc(x, hy - 1.6, 7, Math.PI, Math.PI * 2); ctx.fill(); }            // cap
+  else if (L.hairStyle === 1) { ctx.fillRect(x - 7, hy - 8, 14, 4.6); }                                                  // flat top
+  else if (L.hairStyle === 2) { ctx.beginPath(); ctx.arc(x, hy - 8, 3.4, 0, Math.PI * 2); ctx.fill();
+                                ctx.beginPath(); ctx.arc(x, hy - 1.6, 7, Math.PI, Math.PI * 2); ctx.fill(); }          // bun + cap
+  else { ctx.fillRect(x - 7.6, hy - 3, 2.6, 8); ctx.fillRect(x + 5, hy - 3, 2.6, 8); }                                    // long sides
+  // eyes
+  ctx.fillStyle = '#26221f';
+  ctx.fillRect(x - 3.4, hy - 0.6, 1.8, 1.8);
+  ctx.fillRect(x + 1.6, hy - 0.6, 1.8, 1.8);
+}
+function drawBookseller() {
+  const x = player.x, y = player.y;
+  const moving = !!(keys['w'] || keys['a'] || keys['s'] || keys['d'] || keys['arrowup'] || keys['arrowdown'] || keys['arrowleft'] || keys['arrowright'] || clickTarget);
+  const t = performance.now() / 105;
+  const ph = moving ? Math.sin(t) : 0;
+  const bob = moving ? Math.abs(Math.sin(t)) * 1.8 : 0;
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(x, y + 17, 15, 4.6, 0, 0, Math.PI * 2); ctx.fill();
+  // legs + shoes
+  ctx.fillStyle = '#4a3626';
+  ctx.fillRect(x - 8 + ph * 2.8, y + 7 - bob * 0.4, 5.6, 10);
+  ctx.fillRect(x + 2.4 - ph * 2.8, y + 7 - bob * 0.4, 5.6, 10);
+  ctx.fillStyle = '#2b1d12';
+  ctx.fillRect(x - 8.6 + ph * 2.8, y + 15.4 - bob * 0.4, 6.8, 3);
+  ctx.fillRect(x + 1.8 - ph * 2.8, y + 15.4 - bob * 0.4, 6.8, 3);
+  // shirt (deep green) body
+  ctx.fillStyle = '#33604a';
+  ctx.beginPath();
+  ctx.moveTo(x - 10.5, y + 9); ctx.lineTo(x - 8.4, y - 9 - bob); ctx.lineTo(x + 8.4, y - 9 - bob); ctx.lineTo(x + 10.5, y + 9); ctx.closePath(); ctx.fill();
+  // cream apron with pocket + strap
+  ctx.fillStyle = '#efe3c2';
+  ctx.beginPath();
+  ctx.moveTo(x - 6.4, y - 6 - bob); ctx.lineTo(x + 6.4, y - 6 - bob); ctx.lineTo(x + 7.4, y + 9); ctx.lineTo(x - 7.4, y + 9); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#c9b18c'; ctx.strokeRect(x - 3.4, y + 2.5 - bob, 6.8, 4.6);
+  ctx.fillStyle = '#d9c9a0'; ctx.fillRect(x - 1, y - 12 - bob, 2, 6.4); // neck strap
+  // arms (shirt sleeves, skin hands)
+  ctx.fillStyle = '#33604a';
+  ctx.fillRect(x - 13.6, y - 8 - bob, 4, 12);
+  ctx.fillRect(x + 9.6, y - 8 - bob, 4, 12);
+  ctx.fillStyle = '#e0ac69';
+  ctx.fillRect(x - 13.6, y + 3.4 - bob, 4, 3.4);
+  ctx.fillRect(x + 9.6, y + 3.4 - bob, 4, 3.4);
+  // head
+  const hy = y - 17 - bob;
+  ctx.fillStyle = '#e0ac69';
+  ctx.beginPath(); ctx.arc(x, hy, 7.8, 0, Math.PI * 2); ctx.fill();
+  // hair: neat grey-brown flat top
+  ctx.fillStyle = '#6e5a4a';
+  ctx.fillRect(x - 7.8, hy - 8.6, 15.6, 4.8);
+  ctx.fillRect(x - 7.8, hy - 4.4, 2.4, 4);
+  ctx.fillRect(x + 5.4, hy - 4.4, 2.4, 4);
+  // pencil behind the ear
+  ctx.fillStyle = '#f2c230'; ctx.fillRect(x + 7.6, hy - 7.6, 1.8, 6);
+  // glasses
+  ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 1.1;
+  ctx.strokeRect(x - 6.4, hy - 2.2, 5.4, 4.6);
+  ctx.strokeRect(x + 1, hy - 2.2, 5.4, 4.6);
+  ctx.beginPath(); ctx.moveTo(x - 1, hy - 0.6); ctx.lineTo(x + 1, hy - 0.6); ctx.stroke();
+  ctx.lineWidth = 1;
+  // eyes behind glasses
+  ctx.fillStyle = '#26221f';
+  ctx.fillRect(x - 4.2, hy - 0.8, 1.7, 1.7);
+  ctx.fillRect(x + 2.6, hy - 0.8, 1.7, 1.7);
+  // name tag on the apron
+  ctx.fillStyle = '#c45a3c'; ctx.fillRect(x + 2.6, y - 4.6 - bob, 3.4, 2.4);
+}
+function drawBook(x, y, genre, special, s) {
+  ctx.fillStyle = GENRE_COLOR[genre];
+  ctx.fillRect(x - 6 * s, y - 8 * s, 12 * s, 16 * s);
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  ctx.fillRect(x - 6 * s, y - 2 * s, 12 * s, 2 * s);
+  if (special) { ctx.fillStyle = '#ffd700'; ctx.font = (13 * s) + 'px serif'; ctx.textAlign = 'center'; ctx.fillText('✦', x, y - 12 * s); }
+}
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  // floor
+  ctx.fillStyle = '#543e27'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(0,0,0,.08)';
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  // shelves
+  for (const g of ['green', 'purple']) {
+    const s = SHELF[g];
+    ctx.fillStyle = '#6e4f2a'; ctx.fillRect(s.x, s.y, s.w, s.h);
+    ctx.fillStyle = GENRE_COLOR[g]; ctx.fillRect(s.x, s.y, s.w, 8);
+    ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 15px Georgia'; ctx.textAlign = 'center';
+    ctx.fillText(GENRE_NAME[g].toUpperCase() + '  (' + shelfStock[g].length + ')', s.x + s.w / 2, s.y + 24);
+    shelfStock[g].slice(0, 22).forEach((b, i) => drawBook(s.x + 22 + i * 13.2, s.y + 40, g, b.special, 0.62));
+  }
+  // counters
+  for (const [c, label] of [[BUY_COUNTER, 'BUY COUNTER — haggle here'], [SELL_COUNTER, 'SELL COUNTER — ring up here']]) {
+    ctx.fillStyle = '#7a5a30'; ctx.fillRect(c.x, c.y, c.w, c.h);
+    ctx.fillStyle = '#96733d'; ctx.fillRect(c.x, c.y, c.w, 10);
+    ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 14px Georgia'; ctx.textAlign = 'center';
+    ctx.fillText(label, c.x + c.w / 2, c.y + 34);
+  }
+  // door
+  ctx.fillStyle = '#33261a'; ctx.fillRect(DOOR.x - 34, H - 14, 68, 14);
+  ctx.fillStyle = '#c9b18c'; ctx.font = '12px Georgia'; ctx.textAlign = 'center'; ctx.fillText('DOOR', DOOR.x, H - 20);
+  // customers
+  for (const c of customers) {
+    drawCustomer(c);
+    if (c.kind === 'buyer') drawBook(c.x + 15, c.y - 20, c.genre, c.book ? c.book.special : false, 0.7);
+    else if (c.book) drawBook(c.x + 15, c.y - 20, c.book.genre, c.book.special, 0.7);
+    // patience bar
+    if (c.state !== 'leaveHappy' && c.state !== 'leaveMad') {
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(c.x - 14, c.y - 30, 28, 5);
+      ctx.fillStyle = c.patience > 50 ? '#7dd87d' : c.patience > 25 ? '#ffd98a' : '#e06868';
+      ctx.fillRect(c.x - 14, c.y - 30, 28 * Math.max(0, c.patience) / 100, 5);
+    }
+    if (c.state === 'leaveMad') { ctx.fillStyle = '#e06868'; ctx.font = '14px serif'; ctx.fillText('💢', c.x, c.y - 34); }
+  }
+  // player (the bookseller)
+  drawBookseller();
+  carry.forEach((b, i) => drawBook(player.x - 12 + i * 9, player.y - 34, b.genre, b.special, 0.55));
+  // flash
+  if (flashT > 0) { ctx.fillStyle = '#ffd98a'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center'; ctx.fillText(flashTxt, W / 2, 150); }
+  requestAnimationFrame(draw);
+}
+
+let lastTs = 0;
+function loop(ts) {
+  const dt = Math.min(0.05, (ts - lastTs) / 1000 || 0);
+  lastTs = ts;
+  update(dt);
+  requestAnimationFrame(loop);
+}
+reset();
+draw();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
