@@ -55,7 +55,8 @@
 <h1>📚 Bookstore Sim — Prototype</h1>
 <div id="hud">
   <span><span class="coin"></span> <b id="coins">500</b></span>
-  <span>⏳ Day: <b id="clock">4:00</b></span>
+  <span>📅 <b id="dayNum">Day 1</b></span>
+  <span>⏳ <b id="clock">4:00</b></span>
   <span>🎒 Carrying: <b id="carry">—</b></span>
   <span><button id="musicBtn" style="padding:4px 10px; font-size:13px;">🔊 Music on</button></span>
 </div>
@@ -128,6 +129,8 @@ const OBSTACLES = [ SHELF.green, SHELF.purple, BUY_COUNTER, SELL_COUNTER ];
 
 // ---------- State ----------
 let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
+let day = 1, dayStartCoins = 500;
+function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0 }; }
 let stats, haggle; // haggle = { seller, offer }
 let startNetWorth = 0;
 let player;
@@ -225,7 +228,8 @@ function reset() {
   carry = [];
   customers = [];
   dayT = 0; spawnT = 1.2; running = false; over = false; haggle = null;
-  stats = { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0 };
+  stats = freshStats();
+  day = 1; dayStartCoins = coins;
   startNetWorth = coins + shelfStock.green.concat(shelfStock.purple).reduce((a, b) => a + b.sellPrice, 0);
   player = { x: 480, y: 385, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
@@ -461,7 +465,7 @@ const keys = {};
 addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   if (e.key.toLowerCase() === 'e' || e.key === ' ') { doInteract(); e.preventDefault(); }
-  if (e.key.toLowerCase() === 'r' && over) { reset(); running = true; }
+  if (e.key.toLowerCase() === 'r' && over) { startNextDay(); }
 });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
@@ -574,24 +578,52 @@ function update(dt) {
 }
 
 function refreshHUD() {
+  $('dayNum').textContent = 'Day ' + day;
   $('coins').textContent = (introStep >= 0 && !storySeen) ? Math.round(introCoins).toLocaleString('en-US') : coins;
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
   $('carry').textContent = carry.length ? carry.map(b => (b.genre === 'green' ? '🟩' : '🟪') + (b.special ? '✦' : '')).join(' ') : '—';
 }
 
+// Multi-day runs: the shop's state carries over. At closing, everything the
+// shop owns goes back on a shelf — books in your arms and books buyers are
+// still holding. Shelf first, then your arms; whatever fits nowhere is wasted.
+function startNextDay() {
+  day++;
+  customers = []; dayT = 0; spawnT = 1.2; over = false; haggle = null;
+  stats = freshStats();
+  dayStartCoins = coins;
+  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple, carry).reduce((a, b) => a + b.sellPrice, 0);
+  player.x = 480; player.y = 385; player.target = null;
+  $('tallyPanel').style.display = 'none';
+  $('hagglePanel').style.display = 'none';
+  running = true; musicStart();
+  refreshHUD();
+}
+
 function endDay() {
   over = true; running = false;
   if (haggle) closeHaggle('decline');
-  const profit = coins - 500;
+  $('hagglePanel').style.display = 'none';
+  const pool = carry.slice();
+  for (const c of customers) if (c.kind === 'buyer' && c.book) pool.push(c.book);
+  carry = []; customers = [];
+  for (const b of pool) {
+    if (shelfStock[b.genre].length < SHELF_CAP) shelfStock[b.genre].push(b);
+    else if (carry.length < CARRY_MAX) carry.push(b);
+    else { stats.wasted++; stats.wastedValue += b.sellPrice; }
+  }
+  const profit = coins - dayStartCoins;
   const leftBooks = shelfStock.green.concat(shelfStock.purple, carry);
   const invValue = leftBooks.reduce((a, b) => a + b.sellPrice, 0);
   const invBoughtCost = leftBooks.reduce((a, b) => a + (b.cost || 0), 0);
   const netWorth = coins + invValue, nwDelta = netWorth - startNetWorth;
   const soldProfit = stats.revenue - stats.costOfSold;
   $('tallyBody').innerHTML =
+    '🌙 <b>Day ' + day + ' complete.</b> The shop keeps everything — coins, stock, and what\'s in your arms — into Day ' + (day + 1) + '.<br><br>' +
     'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b> (cost of those books: ' + stats.costOfSold + ' → profit on sold books <b style="color:' + (soldProfit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (soldProfit >= 0 ? '+' : '') + soldProfit + '</b>)<br>' +
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
+    'Wasted at closing (no shelf or arm space): <b>' + stats.wasted + '</b> books' + (stats.wasted ? ' worth <b>' + stats.wastedValue + ' 🪙</b> at sale value' : '') + '<br>' +
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
     'Walkouts — not in stock: <b>' + stats.walkStock + '</b><br>' +
     'Sellers turned away: <b>' + stats.turnedAway + '</b><br><br>' +
@@ -600,9 +632,10 @@ function endDay() {
     '💰 <b>Net worth: ' + netWorth + ' 🪙</b> (opened at ' + startNetWorth + ') — change: <b style="color:' + (nwDelta >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (nwDelta >= 0 ? '+' : '') + nwDelta + ' 🪙</b><br>' +
     'Cash-only day result: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
   $('tallyBody').innerHTML = $('tallyBody').innerHTML.split('🪙').join(COIN);
+  $('restartBtn').textContent = 'Open Day ' + (day + 1) + ' ▸';
   $('tallyPanel').style.display = 'block';
 }
-$('restartBtn').addEventListener('click', () => { reset(); running = true; musicStart(); });
+$('restartBtn').addEventListener('click', startNextDay);
 $('introBar').addEventListener('click', advanceIntro);
 
 // ---------- Draw ----------
