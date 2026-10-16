@@ -105,7 +105,7 @@
       <div class="upcard" id="upCard-supplier">
         <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="14" y="34" width="32" height="18" rx="3" fill="#7a3b8c"/><rect x="26" y="24" width="8" height="12" fill="#e8b48c"/><circle cx="30" cy="19" r="7.5" fill="#e8b48c"/><rect x="17" y="13.5" width="26" height="3.6" rx="1.8" fill="#232028"/><rect x="23" y="5" width="14" height="9" rx="2" fill="#232028"/><rect x="21.5" y="18" width="17" height="4" rx="2" fill="#14100c"/><rect x="41" y="36" width="11" height="14" rx="2" fill="#ffd94a" transform="rotate(14 46 43)"/><text x="46.5" y="46.5" font-size="9" font-weight="bold" fill="#7a5410" text-anchor="middle" transform="rotate(14 46 43)">$</text></svg></div>
         <h3>Sleazy Book Supplier</h3>
-        <p>Knows a guy. When your shelves run completely dry, he slinks in and sells you books — at full retail price. No haggling him down.</p>
+        <p>Knows a guy. When your shelves run completely dry, he slinks in and sells at full retail — and he takes over the nightly restock too: 25 a book instead of the Man's 30.</p>
         <button class="primary upbuy" data-up="supplier">Buy — 50</button>
       </div>
       <div class="upcard" id="upCard-appraisal">
@@ -212,7 +212,7 @@ function gameOverRep() {
   $('hagglePanel').style.display = 'none';   // close whatever was mid-flight; refreshHUD() settles the HUD
   showBankrupt('rep');
 }
-function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0, rentPaid: 0 }; }
+function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0, rentPaid: 0, restockBy: '' }; }
 let stats, haggle; // haggle = { seller, offer }
 let startNetWorth = 0;
 let player;
@@ -763,9 +763,17 @@ function endDay() {
   // He appears BEFORE the tally so the numbers include the deal.
   const shelfTotal = shelfStock.green.length + shelfStock.purple.length;
   const emptySlots = (SHELF_CAP * 2) - shelfTotal;
-  if (emptySlots > 0) {   // he ALWAYS offers if even one slot is empty (Roy)
-    pendingRestock = { empty: emptySlots, total: emptySlots * 30 };
-    $('restockBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “Psst. Shelves are looking bare — <b>' + emptySlots + ' empty spaces</b>. I\'ll fill every one tonight: <b>30</b> ' + COIN + ' a book, and they sell for <b>25</b>. That\'s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”';
+  if (emptySlots > 0) {   // the offer ALWAYS comes if even one slot is empty (Roy)
+    // Owning the Sleazy Supplier SWAPS your supplier: his nightly restock is
+    // at retail (25/book) instead of the Mysterious Man's 30/book trap.
+    const bySupplier = upgrades.supplier;
+    const perBook = bySupplier ? 25 : 30;
+    pendingRestock = { empty: emptySlots, total: emptySlots * perBook, perBook, bySupplier };
+    stats.restockBy = bySupplier ? 'supplier' : 'man';
+    const spaces = emptySlots + ' empty space' + (emptySlots === 1 ? '' : 's');
+    $('restockBody').innerHTML = bySupplier
+      ? '<b>SLEAZY SUPPLIER:</b> “Psst, friend. Gaps on the shelves — <b>' + spaces + '</b>. I fill every one tonight, at retail: <b>25</b> ' + COIN + ' a book. That’s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”'
+      : '<b>MYSTERIOUS MAN:</b> “Psst. Shelves are looking bare — <b>' + spaces + '</b>. I’ll fill every one tonight: <b>30</b> ' + COIN + ' a book, and they sell for <b>25</b>. That’s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”';
     $('restockYes').textContent = coins >= pendingRestock.total ? 'Deal — pay ' + pendingRestock.total : 'You can\'t afford ' + pendingRestock.total;
     $('restockYes').disabled = coins < pendingRestock.total;
     showClosing(() => { $('restockPanel').style.display = 'block'; });
@@ -780,7 +788,7 @@ $('restockYes').addEventListener('click', () => {
   coins -= pendingRestock.total; refreshHUD();
   stats.restocked = pendingRestock.empty; stats.restockCost = pendingRestock.total;
   for (const g of ['green', 'purple'])
-    while (shelfStock[g].length < SHELF_CAP) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = 30; shelfStock[g].push(b); }
+    while (shelfStock[g].length < SHELF_CAP) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = pendingRestock.perBook; shelfStock[g].push(b); }
   pendingRestock = null;
   $('restockPanel').style.display = 'none';
   proceedAfterRestock();
@@ -885,8 +893,8 @@ function composeTally() {
     '🌙 <b>Day ' + day + ' complete.</b><br><br>' +
     'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b><br>' +
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
-    (stats.restocked ? '🧥 The Mysterious Man restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
-    (stats.restockDeclined ? '🧥 You turned down the Mysterious Man\'s restock (' + stats.restockDeclined + ' empty space' + (stats.restockDeclined === 1 ? '' : 's') + ' left bare)<br>' : '') +
+    (stats.restocked ? (stats.restockBy === 'supplier' ? '🕶️ The Sleazy Supplier' : '🧥 The Mysterious Man') + ' restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
+    (stats.restockDeclined ? 'You turned down the restock from ' + (stats.restockBy === 'supplier' ? 'the Sleazy Supplier' : 'the Mysterious Man') + ' (' + stats.restockDeclined + ' empty space' + (stats.restockDeclined === 1 ? '' : 's') + ' left bare)<br>' : '') +
     (stats.rentPaid ? '🧥 Rent to the Mysterious Man: <b>−' + stats.rentPaid + ' 🪙</b> cash<br>' : '') +
     'Wasted at closing (no shelf or arm space): <b>' + stats.wasted + '</b> books' + (stats.wasted ? ' worth <b>' + stats.wastedValue + ' 🪙</b> at sale value' : '') + '<br>' +
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
