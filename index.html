@@ -106,14 +106,14 @@
         <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="14" y="34" width="32" height="18" rx="3" fill="#7a3b8c"/><rect x="26" y="24" width="8" height="12" fill="#e8b48c"/><circle cx="30" cy="19" r="7.5" fill="#e8b48c"/><rect x="17" y="13.5" width="26" height="3.6" rx="1.8" fill="#232028"/><rect x="23" y="5" width="14" height="9" rx="2" fill="#232028"/><rect x="21.5" y="18" width="17" height="4" rx="2" fill="#14100c"/><rect x="41" y="36" width="11" height="14" rx="2" fill="#ffd94a" transform="rotate(14 46 43)"/><text x="46.5" y="46.5" font-size="9" font-weight="bold" fill="#7a5410" text-anchor="middle" transform="rotate(14 46 43)">$</text></svg></div>
         <h3>Sleazy Book Supplier</h3>
         <p>Knows a guy. When your shelves run completely dry, he slinks in and sells at full retail — and he takes over the nightly restock too: 25 a book instead of the Man's 30.</p>
-        <button class="primary upbuy" data-up="supplier">Buy — 50</button>
+        <button class="primary upbuy" data-up="supplier">20 <span class="coin"></span></button>
       </div>
       
       <div class="upcard" id="upCard-marketing">
         <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><path d="M10 26 L34 16 L34 44 L10 34 Z" fill="#c4503c"/><rect x="6" y="25" width="5" height="10" rx="2" fill="#8c3527"/><path d="M16 35 L20 35 L22 47 L16 47 Z" fill="#6e4630"/><path d="M40 20 a14 14 0 0 1 0 20" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M45 15 a21 21 0 0 1 0 30" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/></svg></div>
         <h3>Marketing</h3>
         <p>A flyer run, a sandwich board out front, chalk arrows on the sidewalk. Word gets around: <b>+5 reputation</b>. Once per night.</p>
-        <button class="primary upbuy" data-up="marketing">Buy — 50</button>
+        <button class="primary upbuy" data-up="marketing">20 <span class="coin"></span></button>
       </div>
     </div>
     <div class="row"><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
@@ -907,18 +907,18 @@ $('restartBtn').addEventListener('click', () => {
   $('upgradesPanel').style.display = 'block';
 });
 $('nextDayBtn').addEventListener('click', startNextDay);
-const UP_COST = { supplier: 50, marketing: 50 };   // every Night Market item is 50 (Roy)
+const UP_COST = { supplier: 20, marketing: 20 };   // every Night Market item is 20 (Roy)
 function renderUpgrades() {
   $('upCoins').textContent = coins;
   document.querySelectorAll('.upbuy').forEach(btn => {
     const key = btn.dataset.up;
     if (key === 'marketing') {
-      btn.textContent = marketingTonight ? 'Running tonight ✓' : 'Buy — ' + UP_COST.marketing;
+      btn.innerHTML = marketingTonight ? 'Running tonight ✓' : UP_COST.marketing + ' ' + COIN;
       btn.disabled = marketingTonight || coins < UP_COST.marketing;
       $('upCard-marketing').classList.toggle('owned', marketingTonight);
     }
     else if (upgrades[key]) { btn.textContent = 'Owned ✓'; btn.disabled = true; $('upCard-' + key).classList.add('owned'); }
-    else { btn.textContent = 'Buy — ' + UP_COST[key]; btn.disabled = coins < UP_COST[key]; $('upCard-' + key).classList.remove('owned'); }
+    else { btn.innerHTML = UP_COST[key] + ' ' + COIN; btn.disabled = coins < UP_COST[key]; $('upCard-' + key).classList.remove('owned'); }
   });
 }
 document.querySelectorAll('.upbuy').forEach(btn => btn.addEventListener('click', () => {
