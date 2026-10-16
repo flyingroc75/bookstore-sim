@@ -300,8 +300,9 @@ function doInteract() {
     const b = frontBuyer();
     if (b && b.book) {
       coins += b.book.sellPrice; stats.sold++; stats.revenue += b.book.sellPrice; stats.costOfSold += (b.book.cost || 0);
-      b.state = 'leaveHappy';
       flash('+' + b.book.sellPrice + ' 🪙');
+      b.book = null;              // sold books leave with the buyer — for good
+      b.state = 'leaveHappy';
       sfx('sale');
     }
   } else if (st && st.startsWith('shelf-')) {
@@ -605,7 +606,7 @@ function endDay() {
   if (haggle) closeHaggle('decline');
   $('hagglePanel').style.display = 'none';
   const pool = carry.slice();
-  for (const c of customers) if (c.kind === 'buyer' && c.book) pool.push(c.book);
+  for (const c of customers) if (c.kind === 'buyer' && c.book && (c.state === 'toSell' || c.state === 'queueSell')) pool.push(c.book);
   carry = []; customers = [];
   for (const b of pool) {
     if (shelfStock[b.genre].length < SHELF_CAP) shelfStock[b.genre].push(b);
