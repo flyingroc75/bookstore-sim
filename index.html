@@ -280,6 +280,8 @@ function scheduleStep(step, t) {
 function musicStart() {
   if (!Music.ctx) { try { Music.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
   if (Music.ctx.state === 'suspended') Music.ctx.resume();
+  // The button label doubles as a diagnostic: it shows the live audio state.
+  setTimeout(() => { if (Music.ctx) $('musicBtn').textContent = Music.ctx.state === 'running' ? '🔊 Music on ♪' : '⚠️ Tap for sound'; }, 60);
   if (Music.timer) return;
   Music.nextTime = Music.ctx.currentTime + 0.06;
   Music.timer = setInterval(() => {
@@ -296,7 +298,7 @@ function sfx(kind) {
 $('musicBtn').addEventListener('click', () => {
   Music.on = !Music.on;
   $('musicBtn').textContent = Music.on ? '🔊 Music on' : '🔇 Music off';
-  if (Music.on) { musicStart(); if (Music.ctx) { const t = Music.ctx.currentTime; pluck(659.25, t, 0.4, 0.12); pluck(880.0, t + 0.12, 0.5, 0.12); } }
+  if (Music.on) { musicStart(); if (Music.ctx) { const t = Music.ctx.currentTime; pluck(659.25, t, 0.4, 0.14, 'square'); pluck(880.0, t + 0.12, 0.5, 0.14, 'square'); } }
 });
 // Browsers (esp. iOS) only unlock audio after a user gesture — grab the first one anywhere.
 addEventListener('pointerdown', function unlock() { musicStart(); removeEventListener('pointerdown', unlock); });
@@ -442,7 +444,7 @@ function endDay() {
   $('tallyPanel').style.display = 'block';
 }
 $('restartBtn').addEventListener('click', () => { reset(); $('startPanel').style.display = 'block'; });
-$('startBtn').addEventListener('click', () => { $('startPanel').style.display = 'none'; running = true; musicStart(); });
+$('startBtn').addEventListener('click', () => { $('startPanel').style.display = 'none'; running = true; musicStart(); sfx('sale'); });
 
 // ---------- Draw ----------
 function drawCustomer(c) {
