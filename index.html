@@ -108,17 +108,12 @@
         <p>Knows a guy. When your shelves run completely dry, he slinks in and sells at full retail — and he takes over the nightly restock too: 25 a book instead of the Man's 30.</p>
         <button class="primary upbuy" data-up="supplier">Buy — 50</button>
       </div>
-      <div class="upcard" id="upCard-appraisal">
-        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><path d="M14 44 L30 37 L46 44 L46 18 L30 11 L14 18 Z" fill="#8c2f39"/><path d="M30 11 L30 37" stroke="#f3e9d2" stroke-width="2"/><path d="M18 20 L26 17 M18 27 L26 24 M34 17 L42 20 M34 24 L42 27" stroke="#f3e9d2" stroke-width="1.6"/><circle cx="38" cy="38" r="11" fill="rgba(120,200,220,.28)" stroke="#3d7ea6" stroke-width="3"/><line x1="46" y1="46" x2="55" y2="55" stroke="#3d7ea6" stroke-width="4.5" stroke-linecap="round"/></svg></div>
-        <h3>Book Appraisal Course</h3>
-        <p>A correspondence course in grading books. Your appraisal ranges come in about twice as tight — fewer nasty surprises at the reveal.</p>
-        <button class="primary upbuy" data-up="appraisal">Buy — 50</button>
-      </div>
+      
       <div class="upcard" id="upCard-marketing">
         <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><path d="M10 26 L34 16 L34 44 L10 34 Z" fill="#c4503c"/><rect x="6" y="25" width="5" height="10" rx="2" fill="#8c3527"/><path d="M16 35 L20 35 L22 47 L16 47 Z" fill="#6e4630"/><path d="M40 20 a14 14 0 0 1 0 20" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M45 15 a21 21 0 0 1 0 30" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/></svg></div>
         <h3>Marketing</h3>
         <p>A flyer run, a sandwich board out front, chalk arrows on the sidewalk. Word gets around: <b>+5 reputation</b>. Once per night.</p>
-        <button class="primary upbuy" data-up="marketing">Buy — 20</button>
+        <button class="primary upbuy" data-up="marketing">Buy — 50</button>
       </div>
     </div>
     <div class="row"><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
@@ -912,7 +907,7 @@ $('restartBtn').addEventListener('click', () => {
   $('upgradesPanel').style.display = 'block';
 });
 $('nextDayBtn').addEventListener('click', startNextDay);
-const UP_COST = { supplier: 50, appraisal: 50, marketing: 20 };
+const UP_COST = { supplier: 50, marketing: 50 };   // every Night Market item is 50 (Roy)
 function renderUpgrades() {
   $('upCoins').textContent = coins;
   document.querySelectorAll('.upbuy').forEach(btn => {
