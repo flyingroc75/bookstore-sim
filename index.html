@@ -53,7 +53,7 @@
 <body>
 <h1>📚 Bookstore Sim — Prototype</h1>
 <div id="hud">
-  <span><span class="coin"></span> <b id="coins">500</b></span>
+  <span><span class="coin"></span> <b id="coins">200</b></span>
   <span>📅 <b id="dayNum">Day 1</b></span>
   <span>⏳ <b id="clock">3:30</b></span>
   <span><b id="repFace">😐</b> <b id="rep">25</b></span>
@@ -184,7 +184,7 @@ function rf(a, b) { return a + Math.random() * (b - a); }
 // ---------- Opening sequence: how you ended up owning this bookstore ----------
 // Roy's backstory: a well-meaning but clueless man who always wanted a
 // bookstore saved up 9,999 coins — and a mysterious man sprang a
-// run-down one on him. 9,999 in, 500 left.
+// run-down one on him. 9,999 in, 200 left.
 const INTRO_LINES = [
   { who: 'MYSTERIOUS MAN', line: 'Psst. Wanna buy a bookstore?' },
   { who: 'YOU', line: "Oh boy! I've always wanted a bookstore!" },
@@ -211,7 +211,7 @@ function startCoinHold() {
 }
 function advanceIntro() {
   if (introStep < 0 || storySeen) return;
-  if (introStep === 2 && coinAnim) { coinAnim = null; introCoins = 500; startCoinHold(); return; }
+  if (introStep === 2 && coinAnim) { coinAnim = null; introCoins = 200; startCoinHold(); return; }
   if (introStep === 1) coinAnim = { t: 0 };                    // "Deal." lands next — the coins drain
   if (introStep === 2 && landlord) { landlord.leaving = true; landlord.state = 'toDoor'; }   // landlord vanishes after the deal
   introStep++;
@@ -227,7 +227,7 @@ function updateIntro(dt) {
   if (coinAnim) {
     coinAnim.t += dt / 2.2;
     const k = Math.min(1, coinAnim.t);
-    introCoins = 9999 - 9499 * k * k;
+    introCoins = 9999 - 9799 * k * k;
     // a visible stream of coins flies from you to the landlord the whole way down
     coinSpawnT -= dt;
     if (k < 1 && coinSpawnT <= 0) {
@@ -241,7 +241,7 @@ function updateIntro(dt) {
       lastCoinBucket = bucket;
       if (Music.ctx && Music.ctx.state === 'running' && Music.on) pluck(880 - (9999 - introCoins) / 9499 * 380, Music.ctx.currentTime, 0.08, 0.028, 'triangle');
     }
-    if (k >= 1) { introCoins = 500; coinAnim = null; startCoinHold(); }
+    if (k >= 1) { introCoins = 200; coinAnim = null; startCoinHold(); }
   }
   if (coinHold > 0) coinHold -= dt;
   // coin particles arc from the player to the landlord (or the door once he's gone)
@@ -261,10 +261,10 @@ function updateIntro(dt) {
 }
 
 function reset() {
-  coins = 500;
+  coins = 200;
   shelfStock = { green: [], purple: [] };
   // Starting stock is priced flat: every opening book sells for 25, so the
-  // run always opens at 500 coins + 12 x 25 = 800 net worth.
+  // run always opens at 200 coins + 12 x 25 = 500 net worth.
   for (let i = 0; i < 6; i++) {
     const g = makeBook('green', false); g.sellPrice = 25; g.cost = 25; shelfStock.green.push(g);
     const p = makeBook('purple', false); p.sellPrice = 25; p.cost = 25; shelfStock.purple.push(p);
@@ -754,7 +754,7 @@ function showEndingLine() {
 }
 function advanceEnding() {
   if (endingStep < 0) return;
-  if (endingStep === 2 && coinAnim) { coinAnim = null; introCoins = 500; startCoinHold(); return; }
+  if (endingStep === 2 && coinAnim) { coinAnim = null; introCoins = 200; startCoinHold(); return; }
   if (endingStep === 1) { coinAnim = { t: 0 }; introCoins = 9999; }
   if (endingStep === 2) playerLeaving = true;
   endingStep++;
