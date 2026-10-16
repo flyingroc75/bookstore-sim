@@ -167,11 +167,11 @@ function spawnCustomer() {
 const buyQueue  = () => customers.filter(c => c.kind === 'seller' && (c.state === 'toBuy' || c.state === 'haggle'));
 const sellQueue = () => customers.filter(c => c.kind === 'buyer'  && c.state === 'toSell');
 function queuePos(counter, idx, fromTop) {
-  return { x: counter.x + 40 + idx * 62, y: counter.y - 34 };
+  return { x: counter.x + 40 + idx * 70, y: counter.y - 40 };
 }
 function shelfSpot(genre, idx) {
   const s = SHELF[genre];
-  return { x: s.x + 36 + (idx % 6) * 48, y: s.y + s.h + 30 };
+  return { x: s.x + 30 + (idx % 6) * 54, y: s.y + s.h + 34 };
 }
 
 // ---------- Interaction ----------
@@ -448,7 +448,10 @@ $('startBtn').addEventListener('click', () => { $('startPanel').style.display = 
 
 // ---------- Draw ----------
 function drawCustomer(c) {
-  const L = c.look, x = c.x, y = c.y;
+  ctx.save();
+  ctx.translate(c.x, c.y);
+  ctx.scale(1.9, 1.9);
+  const L = c.look, x = 0, y = 0;
   const moving = !(c.state === 'haggle' || c.state === 'waitShelf');
   const ph = moving ? Math.sin(performance.now() / 110 + c.id * 1.7) : 0;
   const bob = moving ? Math.abs(Math.sin(performance.now() / 110 + c.id * 1.7)) * 1.6 : 0;
@@ -489,9 +492,13 @@ function drawCustomer(c) {
   ctx.fillStyle = '#26221f';
   ctx.fillRect(x - 3.4, hy - 0.6, 1.8, 1.8);
   ctx.fillRect(x + 1.6, hy - 0.6, 1.8, 1.8);
+  ctx.restore();
 }
 function drawBookseller() {
-  const x = player.x, y = player.y;
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.scale(1.9, 1.9);
+  const x = 0, y = 0;
   const moving = !!(keys['w'] || keys['a'] || keys['s'] || keys['d'] || keys['arrowup'] || keys['arrowdown'] || keys['arrowleft'] || keys['arrowright'] || clickTarget);
   const t = performance.now() / 105;
   const ph = moving ? Math.sin(t) : 0;
@@ -546,6 +553,7 @@ function drawBookseller() {
   ctx.fillRect(x + 2.6, hy - 0.8, 1.7, 1.7);
   // name tag on the apron
   ctx.fillStyle = '#c45a3c'; ctx.fillRect(x + 2.6, y - 4.6 - bob, 3.4, 2.4);
+  ctx.restore();
 }
 function drawBook(x, y, genre, special, s) {
   ctx.fillStyle = GENRE_COLOR[genre];
@@ -636,19 +644,19 @@ function draw() {
   // customers
   for (const c of customers) {
     drawCustomer(c);
-    if (c.kind === 'buyer') drawBook(c.x + 15, c.y - 20, c.genre, c.book ? c.book.special : false, 0.7);
-    else if (c.book) drawBook(c.x + 15, c.y - 20, c.book.genre, c.book.special, 0.7);
+    if (c.kind === 'buyer') drawBook(c.x + 23, c.y - 32, c.genre, c.book ? c.book.special : false, 0.95);
+    else if (c.book) drawBook(c.x + 23, c.y - 32, c.book.genre, c.book.special, 0.95);
     // patience bar
     if (c.state !== 'leaveHappy' && c.state !== 'leaveMad') {
-      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(c.x - 14, c.y - 30, 28, 5);
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(c.x - 20, c.y - 56, 40, 5.5);
       ctx.fillStyle = c.patience > 50 ? '#7dd87d' : c.patience > 25 ? '#ffd98a' : '#e06868';
-      ctx.fillRect(c.x - 14, c.y - 30, 28 * Math.max(0, c.patience) / 100, 5);
+      ctx.fillRect(c.x - 20, c.y - 56, 40 * Math.max(0, c.patience) / 100, 5.5);
     }
-    if (c.state === 'leaveMad') { ctx.fillStyle = '#e06868'; ctx.font = '14px serif'; ctx.fillText('💢', c.x, c.y - 34); }
+    if (c.state === 'leaveMad') { ctx.fillStyle = '#e06868'; ctx.font = '17px serif'; ctx.fillText('💢', c.x, c.y - 60); }
   }
   // player (the bookseller)
   drawBookseller();
-  carry.forEach((b, i) => drawBook(player.x - 12 + i * 9, player.y - 34, b.genre, b.special, 0.55));
+  carry.forEach((b, i) => drawBook(player.x - 16 + i * 11, player.y - 60, b.genre, b.special, 0.7));
   // flash
   if (flashT > 0) { ctx.fillStyle = '#ffd98a'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center'; ctx.fillText(flashTxt, W / 2, 150); }
   requestAnimationFrame(draw);
