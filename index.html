@@ -340,11 +340,19 @@ function scheduleStep(step, t) {
   if (beat % 2 === 0 && Math.random() < 0.62) pluck(PENTA[rnd(0, PENTA.length - 1)], t, 0.55, 0.11);
   if (beat === 6 && Math.random() < 0.3) pluck(PENTA[rnd(0, PENTA.length - 1)], t, 0.4, 0.07);
 }
+function syncMusicBtn() {
+  const b = $('musicBtn'); if (!b) return;
+  if (!Music.on) b.textContent = '🔇 Music off';
+  else if (Music.ctx && Music.ctx.state === 'running') b.textContent = '🔊 Music on ♪';
+  else b.textContent = '⚠️ Tap for sound';
+}
 function musicStart() {
-  if (!Music.ctx) { try { Music.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
-  if (Music.ctx.state === 'suspended') Music.ctx.resume();
-  // The button label doubles as a diagnostic: it shows the live audio state.
-  setTimeout(() => { if (Music.ctx) $('musicBtn').textContent = Music.ctx.state === 'running' ? '🔊 Music on ♪' : '⚠️ Tap for sound'; }, 60);
+  if (!Music.ctx) {
+    try { Music.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    Music.ctx.onstatechange = syncMusicBtn;
+  }
+  if (Music.ctx.state === 'suspended') { const p = Music.ctx.resume(); if (p && p.then) p.then(syncMusicBtn); }
+  syncMusicBtn();
   if (Music.timer) return;
   Music.nextTime = Music.ctx.currentTime + 0.06;
   Music.timer = setInterval(() => {
@@ -360,8 +368,8 @@ function sfx(kind) {
 }
 $('musicBtn').addEventListener('click', () => {
   Music.on = !Music.on;
-  $('musicBtn').textContent = Music.on ? '🔊 Music on' : '🔇 Music off';
-  if (Music.on) { musicStart(); if (Music.ctx) { const t = Music.ctx.currentTime; pluck(659.25, t, 0.4, 0.05, 'triangle'); pluck(880.0, t + 0.12, 0.5, 0.05, 'triangle'); } }
+  if (Music.on) { musicStart(); if (Music.ctx && Music.ctx.state === 'running') { const t = Music.ctx.currentTime; pluck(659.25, t, 0.4, 0.05, 'triangle'); pluck(880.0, t + 0.12, 0.5, 0.05, 'triangle'); } }
+  syncMusicBtn();
 });
 // Browsers (esp. iOS) only unlock audio after a user gesture — grab the first one anywhere.
 addEventListener('pointerdown', function unlock() { musicStart(); removeEventListener('pointerdown', unlock); });
@@ -739,6 +747,11 @@ function loop(ts) {
   update(dt);
   requestAnimationFrame(loop);
 }
+// A refresh / back-forward-cache restore can resurrect a stale DOM with panels
+// in odd states — on a persisted pageshow, force one clean opening state.
+addEventListener('pageshow', e => {
+  if (e.persisted) { reset(); $('startPanel').style.display = 'block'; draw(); }
+});
 reset();
 draw();
 requestAnimationFrame(loop);
