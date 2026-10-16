@@ -110,10 +110,15 @@ const COIN = '<span class="coin"></span>';
 // ---------- Layout ----------
 const W = 960, H = 600;
 const SHELF_TIERS = 3;               // big bookcases with room to grow into
-const SHELF = {
-  green:  { x: 110, y: 40,  w: 320, h: 168 },
-  purple: { x: 530, y: 40,  w: 320, h: 168 }
-};
+// Floor plan reserves room for EIGHT bookshelves: 4 along the back wall,
+// 4 as islands. Only the first two are built (green, purple) for now.
+const SHELF_SLOTS = [
+  { x: 30,  y: 36,  w: 210, h: 140 }, { x: 260, y: 36,  w: 210, h: 140 },
+  { x: 490, y: 36,  w: 210, h: 140 }, { x: 720, y: 36,  w: 210, h: 140 },
+  { x: 30,  y: 236, w: 210, h: 84 },  { x: 260, y: 236, w: 210, h: 84 },
+  { x: 490, y: 236, w: 210, h: 84 },  { x: 720, y: 236, w: 210, h: 84 }
+];
+const SHELF = { green: SHELF_SLOTS[0], purple: SHELF_SLOTS[1] };
 const BUY_COUNTER  = { x: 90,  y: 452, w: 300, h: 52 };
 const SELL_COUNTER = { x: 570, y: 452, w: 300, h: 52 };
 const DOOR = { x: 452, y: 588 };
@@ -149,7 +154,7 @@ function reset() {
   dayT = 0; spawnT = 1.2; running = false; over = false; haggle = null;
   stats = { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0 };
   startNetWorth = coins + shelfStock.green.concat(shelfStock.purple).reduce((a, b) => a + b.sellPrice, 0);
-  player = { x: 480, y: 330, speed: 235, target: null };
+  player = { x: 480, y: 385, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
 }
@@ -652,16 +657,17 @@ function draw() {
   for (let y = 168; y < H; y += 26) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
   for (let x = 30; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 148); ctx.lineTo(x, H); ctx.stroke(); }
   // rug between the counters
-  ctx.fillStyle = '#74343a'; ctx.fillRect(392, 296, 176, 118);
-  ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(400, 304, 160, 102); ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(201,163,90,.5)'; ctx.strokeRect(412, 316, 136, 78);
-  // window between the shelves, warm evening light
-  ctx.fillStyle = '#2f2a33'; ctx.fillRect(446, 38, 68, 84);
-  ctx.fillStyle = '#e8b96a'; ctx.fillRect(450, 42, 60, 76);
-  ctx.fillStyle = '#d99e4e'; ctx.beginPath(); ctx.moveTo(450, 118); ctx.lineTo(480, 60); ctx.lineTo(510, 118); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = '#2f2a33'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(480, 42); ctx.lineTo(480, 118); ctx.moveTo(450, 80); ctx.lineTo(510, 80); ctx.stroke(); ctx.lineWidth = 1;
-  ctx.fillStyle = '#74343a'; ctx.fillRect(442, 34, 76, 7);          // curtain bar valance
+  ctx.fillStyle = '#74343a'; ctx.fillRect(392, 340, 176, 96);
+  ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(400, 348, 160, 80); ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(201,163,90,.5)'; ctx.strokeRect(412, 359, 136, 54);
+  // reserved floor space for the six future bookshelves (only 2 of 8 built)
+  ctx.setLineDash([6, 5]);
+  for (let i = 2; i < SHELF_SLOTS.length; i++) {
+    const r = SHELF_SLOTS[i];
+    ctx.fillStyle = 'rgba(0,0,0,.13)'; ctx.fillRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12);
+    ctx.strokeStyle = 'rgba(243,233,210,.38)'; ctx.strokeRect(r.x - 6, r.y - 6, r.w + 12, r.h + 12);
+  }
+  ctx.setLineDash([]);
   // shelves — proper bookcases
   for (const g of ['green', 'purple']) {
     const s = SHELF[g];
