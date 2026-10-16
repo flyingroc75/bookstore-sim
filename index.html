@@ -158,7 +158,7 @@ const OBSTACLES = [ SHELF.green, SHELF.purple, BUY_COUNTER, SELL_COUNTER ];
 
 // ---------- State ----------
 let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
-let day = 1, dayStartCoins = 500;
+let day = 1, dayStartCoins = 200;
 let reputation = 25;                 // ⭐ start ~25; −1 per declined sale / patience walkout
 function repDown() { reputation = Math.max(1, reputation - 1); }
 function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0, rentPaid: 0 }; }
