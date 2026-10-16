@@ -229,7 +229,7 @@ function openHaggle(seller) {
   $('haggleTitle').textContent = 'Haggle — ' + GENRE_NAME[seller.book.genre] + (seller.book.special ? ' ✦ SPECIAL' : '');
   $('haggleBook').innerHTML = 'Book: <span class="swatch" style="background:' + GENRE_COLOR[seller.book.genre] + '"></span>' +
     GENRE_NAME[seller.book.genre] + (seller.book.special ? ' (special edition!)' : '') +
-    ' · Its true sell price is hidden — you only get a range. Pay more than it\'s worth and you lose money at the till.';
+    '';
   const [lo, hi] = appraisalRange(seller.book);
   const slider = $('offerSlider');
   const max = Math.max(hi, seller.ask);            // bar runs 0 → top of range or the ask, whichever is higher
