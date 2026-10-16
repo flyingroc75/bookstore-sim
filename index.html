@@ -56,7 +56,7 @@
   <span><span class="coin"></span> <b id="coins">500</b></span>
   <span>📅 <b id="dayNum">Day 1</b></span>
   <span>⏳ <b id="clock">3:30</b></span>
-  <span><b id="repFace">🙂</b> <b id="rep">25</b></span>
+  <span><b id="repFace">😐</b> <b id="rep">25</b></span>
   <span><button id="musicBtn" style="padding:4px 10px; font-size:13px;">🔊 Music on</button></span>
 </div>
 <div id="wrap">
@@ -585,7 +585,7 @@ function refreshHUD() {
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
   $('rep').textContent = reputation;
-  $('repFace').textContent = reputation >= 30 ? '😀' : reputation >= 20 ? '🙂' : reputation >= 12 ? '😐' : reputation >= 6 ? '🙁' : '😠';
+  $('repFace').textContent = reputation >= 40 ? '😀' : reputation >= 30 ? '🙂' : reputation >= 18 ? '😐' : reputation >= 8 ? '🙁' : '😠';
 }
 
 // Multi-day runs: the shop's state carries over. At closing, everything the
