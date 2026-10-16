@@ -115,6 +115,12 @@
         <p>A flyer run, a sandwich board out front, chalk arrows on the sidewalk. Word gets around: <b>+5 reputation</b>. Once per night.</p>
         <button class="primary upbuy" data-up="marketing">20 <span class="coin"></span></button>
       </div>
+      <div class="upcard" id="upCard-bookcase">
+        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="12" y="6" width="36" height="48" fill="#7d5a30"/><rect x="15" y="9" width="30" height="42" fill="#43301d"/><line x1="15" y1="23" x2="45" y2="23" stroke="#96733d" stroke-width="2.6"/><line x1="15" y1="37" x2="45" y2="37" stroke="#96733d" stroke-width="2.6"/><rect x="18" y="13" width="5" height="10" fill="#4f7d4a"/><rect x="24" y="12" width="5" height="11" fill="#7a9e43"/><rect x="33" y="13" width="5" height="10" fill="#5a8c6e"/><rect x="20" y="27" width="5" height="10" fill="#8a5fa0"/><rect x="26" y="26" width="5" height="11" fill="#6a4a8c"/><rect x="36" y="27" width="5" height="10" fill="#a06ab0"/><rect x="19" y="41" width="5" height="10" fill="#4f7d4a"/><rect x="30" y="40" width="5" height="11" fill="#8a5fa0"/><rect x="37" y="41" width="5" height="10" fill="#7a9e43"/></svg></div>
+        <h3>Bookcase Upgrade</h3>
+        <p>Proper three-tier bookcases, built overnight. Each case holds <b>9 books</b> instead of 6 — room to breathe, room to stock.</p>
+        <button class="primary upbuy" data-up="bookcase">20 <span class="coin"></span></button>
+      </div>
     </div>
     <div class="row"><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
   </div>
@@ -172,7 +178,7 @@ const COIN = '<span class="coin"></span>';
 // ---------- Layout ----------
 const W = 960, H = 600;
 let SHELF_TIERS = 2;                 // tiers per bookcase
-let upgrades = { supplier: false, appraisal: false };
+let upgrades = { supplier: false, appraisal: false, bookcase: false };
 let supplierUsedToday = false, marketingTonight = false;
 // Floor plan per Roy's sketch (2026-10-16): bookcases in the two TOP CORNERS,
 // counters along the bottom, door at the bottom-left. Room for SIX more
@@ -324,7 +330,7 @@ function reset() {
   player = { x: 480, y: 385, speed: 235, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
-  upgrades = { supplier: false, appraisal: false }; applyUpgrades();
+  upgrades = { supplier: false, appraisal: false, bookcase: false }; applyUpgrades();
   if (!storySeen) startIntro();
 }
 
@@ -701,6 +707,9 @@ function refreshHUD() {
 // shop owns goes back on a shelf — books in your arms and books buyers are
 // still holding. Shelf first, then your arms; whatever fits nowhere is wasted.
 function applyUpgrades() {
+  SHELF_CAP = upgrades.bookcase ? 9 : 6;
+  SHELF_TIERS = upgrades.bookcase ? 3 : 2;
+  for (const g of ['green', 'purple']) SHELF[g].h = upgrades.bookcase ? 174 : 116;
   supplierUsedToday = false;
   marketingTonight = false;
 }
@@ -907,7 +916,7 @@ $('restartBtn').addEventListener('click', () => {
   $('upgradesPanel').style.display = 'block';
 });
 $('nextDayBtn').addEventListener('click', startNextDay);
-const UP_COST = { supplier: 20, marketing: 20 };   // every Night Market item is 20 (Roy)
+const UP_COST = { supplier: 20, marketing: 20, bookcase: 20 };   // every Night Market item is 20 (Roy)
 function renderUpgrades() {
   $('upCoins').textContent = coins;
   document.querySelectorAll('.upbuy').forEach(btn => {
