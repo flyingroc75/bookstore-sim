@@ -168,7 +168,8 @@
 <script>
 "use strict";
 // ---------- Constants ----------
-const DAY_LEN = 210;                 // one day = 3 minutes 30 seconds
+const DAY_LEN = 150;                 // one day = 2 minutes 30 seconds (Roy tuned: 5:00 → 4:00 → 3:30 → 2:30)
+const SPEED_MULT = 1.25;             // all character movement ×1.25 (Roy, 2026-10-16)
 const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4' };
 const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction' };
 const CARRY_MAX = 4;
@@ -306,7 +307,7 @@ function updateIntro(dt) {
     return true;
   });
   if (landlord && landlord.leaving) {
-    if (moveToward(landlord, DOOR.x, DOOR.y + 24, 175, dt)) landlord = null;
+    if (moveToward(landlord, DOOR.x, DOOR.y + 24, 175 * SPEED_MULT, dt)) landlord = null;
   }
   if (introStep >= 0) refreshHUD();
   updateEnding(dt);
@@ -327,7 +328,7 @@ function reset() {
   stats = freshStats();
   day = 1; dayStartCoins = coins; reputation = 25;
   startNetWorth = coins + shelfStock.green.concat(shelfStock.purple).reduce((a, b) => a + (b.cost || 0), 0);
-  player = { x: 480, y: 385, speed: 235, target: null };
+  player = { x: 480, y: 385, speed: 235 * SPEED_MULT, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
   upgrades = { supplier: false, appraisal: false, bookcase: false }; applyUpgrades();
@@ -636,13 +637,13 @@ function update(dt) {
   const bq = buyQueue(), sq = sellQueue();
   let shelfWaiters = { green: 0, purple: 0 };
   for (const c of customers) {
-    if (c.state === 'leaveHappy' || c.state === 'leaveMad') { moveToward(c, DOOR.x, DOOR.y + 26, 150, dt); continue; }
+    if (c.state === 'leaveHappy' || c.state === 'leaveMad') { moveToward(c, DOOR.x, DOOR.y + 26, 150 * SPEED_MULT, dt); continue; }
     if (c.kind === 'seller') {
       if (c.state === 'enter') { c.state = 'toBuy'; }
       if (c.state === 'toBuy' || c.state === 'haggle') {
         const idx = bq.indexOf(c);
         const pos = queuePos(BUY_COUNTER, Math.max(0, idx), true);
-        if (c.state === 'toBuy') moveToward(c, pos.x, pos.y, 125, dt);
+        if (c.state === 'toBuy') moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
         if (!(haggle && haggle.dealt && haggle.seller === c)) c.patience -= dt * (c.state === 'haggle' ? 2.0 : 1.5);
         if (c.patience <= 0) {
           if (haggle && haggle.seller === c) closeHaggle('storm');
@@ -653,20 +654,20 @@ function update(dt) {
       if (c.state === 'enter') c.state = 'toShelf';
       if (c.state === 'toShelf') {
         const pos = shelfSpot(c.genre, shelfWaiters[c.genre]++);
-        const arrived = moveToward(c, pos.x, pos.y, 125, dt);
+        const arrived = moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
         if (arrived) {
           if (shelfStock[c.genre].length > 0) { c.book = shelfStock[c.genre].shift(); c.state = 'toSell'; }
           else c.state = 'waitShelf';
         }
       } else if (c.state === 'waitShelf') {
         const pos = shelfSpot(c.genre, shelfWaiters[c.genre]++);
-        moveToward(c, pos.x, pos.y, 125, dt);
+        moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
         if (shelfStock[c.genre].length > 0) { c.book = shelfStock[c.genre].shift(); c.state = 'toSell'; }
         else { c.patience -= dt * 3.2; if (c.patience <= 0) { c.state = 'leaveMad'; stats.walkStock++; repDown(); } }
       } else if (c.state === 'toSell') {
         const idx = sq.indexOf(c);
         const pos = queuePos(SELL_COUNTER, Math.max(0, idx), true);
-        moveToward(c, pos.x, pos.y, 125, dt);
+        moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
         c.patience -= dt * 1.5;
         if (c.patience <= 0) { // leaves, book goes back on the shelf
           shelfStock[c.genre].push(c.book); c.book = null; c.state = 'leaveMad'; stats.walkWait++; repDown();
@@ -881,7 +882,7 @@ function advanceEnding() {
   showEndingLine();
 }
 function updateEnding(dt) {
-  if (playerLeaving) { if (moveToward(player, DOOR.x, DOOR.y + 24, 175, dt)) playerLeaving = false; }
+  if (playerLeaving) { if (moveToward(player, DOOR.x, DOOR.y + 24, 175 * SPEED_MULT, dt)) playerLeaving = false; }
   confetti = confetti.filter(p => { p.life -= dt; p.vy = Math.min(150, p.vy + 60 * dt); p.y += p.vy * dt; p.x += p.vx * dt + Math.sin(p.y * 0.04 + p.seed) * 0.7; p.rot += p.vr * dt; return p.life > 0 && p.y < H + 24; });
 }
 
