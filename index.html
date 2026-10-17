@@ -817,7 +817,7 @@ const ENDING_LINES = [
   { who: 'YOU', line: 'Deal.' },
   { who: 'UNSUSPECTING BUYER', line: "…It's a bit run-down. And — wait, where did he go?" }
 ];
-const rentDue = () => 400 + 100 * (day / 3);   // 500 in week 1, +100 each week
+const rentDue = () => 200 + 100 * (day / 3);   // 300 in week 1, +100 each week (was 500 base; Roy, 2026-10-16)
 function showRent() {
   const rent = rentDue();
   $('rentBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “End of the week. Rent\'s due: <b>' + rent + '</b> ' + COIN + '. Cash.”<br><br>You have <b>' + coins + '</b> ' + COIN + ' in the till.';
