@@ -70,6 +70,7 @@
   <span>⏳ <b id="clock">3:30</b></span>
   <span><b id="repFace">😐</b> <b id="rep">25</b></span>
   <span><button id="musicBtn" style="padding:4px 10px; font-size:13px;">🔊 Music on</button></span>
+  <span id="buildTag" style="opacity:.55; font-size:11px;"></span>
 </div>
 <div id="wrap">
   <canvas id="game" width="960" height="600"></canvas>
@@ -171,6 +172,7 @@
 const DAY_LEN = 150;                 // one day = 2 minutes 30 seconds (Roy tuned: 5:00 → 4:00 → 3:30 → 2:30)
 const SPEED_MULT = 1.25;             // all character movement ×1.25 (Roy, 2026-10-16)
 const PATIENCE_MULT = 0.75;          // customers keep 75% of original patience (Roy, 2026-10-16)
+const BUILD_LABEL = 'stable';           // 'dev' in the iteration repo; promotion to the stable repo seds this to 'stable'
 const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4' };
 const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction' };
 const CARRY_MAX = 4;
@@ -1214,6 +1216,7 @@ function loop(ts) {
   update(dt);
   requestAnimationFrame(loop);
 }
+$('buildTag').textContent = BUILD_LABEL + ' build';
 // A refresh / back-forward-cache restore can resurrect a stale DOM with panels
 // in odd states — on a persisted pageshow, force one clean opening state.
 addEventListener('pageshow', e => {
