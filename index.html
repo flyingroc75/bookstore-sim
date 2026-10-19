@@ -12,23 +12,98 @@
   #hud { display:flex; gap:22px; font-size:16px; margin-bottom:8px; flex-wrap:wrap; justify-content:center; }
   #hud b { color:#e8c87a; }
   #wrap { position:relative; }
-  canvas { background:#4a3826; border:3px solid #8a6d3f; border-radius:8px; max-width:96vw; height:auto; touch-action:none; }
-  #hint { margin-top:8px; font-size:15px; min-height:20px; color:#ffd98a; text-align:center; }
+  canvas { background:#4a3826; border:3px solid #8a6d3f; border-radius:8px; width:min(960px,96vw); height:auto; aspect-ratio:960/600; display:block; touch-action:none; }
+  /* width + aspect-ratio (not just max-width): iOS was laying out the wrap
+     at the canvas's intrinsic 600px height instead of its scaled height,
+     so the bottom-anchored dialogs floated far below the visible shop —
+     the "too much space" gap Roy reported, 2026-10-18. */
   .panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
            background:#241a10; border:2px solid #e8c87a; border-radius:10px; padding:20px 24px;
            min-width:340px; max-width:92%; box-shadow:0 10px 40px rgba(0,0,0,.6); display:none; z-index:5; }
+  #titlePanel { width:min(680px, 94vw); text-align:center; }
+  #titlePanel h2 { font-size:32px; margin-bottom:12px; }
+  #titleArt { width:100%; height:auto; aspect-ratio:640/340; display:block; border-radius:10px; border:1.5px solid #c9a35a; background:#6d5138; }
+  #titleSave { min-height:20px; color:#cbb27a; font-size:14px; margin:10px 0 2px; }
+  #titlePanel .row button { font-size:19px; padding:11px 30px; margin-top:8px; }
   #closeOverlay { position:absolute; inset:0; background:rgba(24,16,8,.62); z-index:4;
     display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; }
   #closeOverlay .big { font-size:44px; color:#f3e9d2; font-family:Georgia,serif; text-shadow:0 2px 10px #000; }
   #closeOverlay .sub { font-size:17px; color:#d8c9a3; margin-top:8px; font-style:italic; }
-  .upcards { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:10px 0; }
-  .upcard { background:#2b1f12; border:1.5px solid #8a6d3f; border-radius:12px; width:204px; padding:10px 11px; text-align:center; }
+  .upcards { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:10px 0; }
+  .upcard { background:#2b1f12; border:1.5px solid #8a6d3f; border-radius:12px; width:106px; padding:8px 6px 7px; text-align:center; }
   .upcard.owned { border-color:#7fae5a; opacity:.85; }
-  .upcard h3 { margin:8px 0 4px; font-size:16.5px; color:#f3e9d2; }
-  .upcard p { margin:0 0 8px; font-size:13px; color:#cbbd97; line-height:1.32; min-height:52px; }
-  .upcard .icon { height:52px; display:flex; align-items:center; justify-content:center; }
-  #upgradesPanel { max-height:96%; overflow-y:auto; padding:14px 18px; }
+  .upcard h3 { margin:5px 0 6px; font-size:12.5px; line-height:1.25; color:#f3e9d2; min-height:31px; display:flex; align-items:center; justify-content:center; }
+  .upcard .icon { height:46px; display:flex; align-items:center; justify-content:center; font-size:34px; cursor:pointer; }
+  .upcard .icon svg { width:44px; height:44px; }
+  .upcard button { width:100%; font-size:12.5px; padding:6px 2px; }
+  #upPop { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(10,6,3,.72); z-index:5; border-radius:14px; }
+  #upPop .popcard { background:#2b1f12; border:1.5px solid #c9a35a; border-radius:12px; width:min(340px, 88%); padding:16px 18px; text-align:center; position:relative; }
+  #upPop .popicon { height:64px; display:flex; align-items:center; justify-content:center; font-size:44px; }
+  #upPop .popicon svg { width:60px; height:60px; }
+  #upPop h3 { margin:6px 0; color:#f3e9d2; font-size:18px; }
+  #upPop p { color:#cbbd97; font-size:13.5px; line-height:1.45; margin:0 0 8px; }
+  #upPop .popstatus { color:#ffd94a; font-size:13px; font-weight:bold; }
+  #upPopClose { position:absolute; top:6px; right:10px; background:none; border:none; color:#cbbd97; font-size:19px; cursor:pointer; padding:2px 6px; }
+  /* Panel is a flex column that does NOT scroll itself; only #upScroll
+     (the cards) scrolls. So the header stays on top and the description
+     popup (#upPop, absolute over the panel) is always fully visible —
+     previously the whole panel scrolled and the popup centered on the
+     full scroll height, hiding it for icons lower down (Roy, 2026-10-16). */
+  #upgradesPanel { max-height:96%; overflow:hidden; padding:14px 18px; flex-direction:column; }
   #upgradesPanel h2 { margin:0 0 2px; font-size:23px; }
+  #upScroll { overflow-y:auto; min-height:0; }
+  /* Overnight dialogs wear the story-bar look of the intro/ending dialog
+     (Roy, 2026-10-17): bottom-anchored dark bar, gold trim, name in gold
+     caps, line in italic serif, choices as gold pills. */
+  .panel.storybar { left:50%; top:auto; bottom:12px; transform:translateX(-50%); width:min(560px,92%); min-width:0;
+    background:rgba(30,21,13,.97); border:1.5px solid #c9a35a; border-radius:12px; padding:9px 14px 7px;
+    text-align:left; box-shadow:0 6px 22px rgba(0,0,0,.5); z-index:6; }
+  .storybar h2 { font:700 11px Georgia,serif; letter-spacing:.14em; color:#c9a35a; margin:0 0 2px; text-transform:uppercase; }
+  .storybar p { font:italic 15.5px Georgia,serif; color:#f3e9d2; line-height:1.38; margin:1px 0; }
+  .storybar .row { justify-content:flex-end; margin-top:6px; gap:8px; }
+  .storybar button { background:transparent; border:1.5px solid #c9a35a; color:#f3e9d2; border-radius:8px; padding:6px 14px; font:14px Georgia,serif; cursor:pointer; }
+  .storybar button.primary { background:#c9a35a; color:#241a10; font-weight:700; }
+  .storybar button:disabled { opacity:.45; cursor:default; }
+  @keyframes hudPop { 0% { transform:scale(1); } 35% { transform:scale(1.5); } 100% { transform:scale(1); } }
+  @keyframes hudShake { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-3px); } 40% { transform:translateX(3px); } 60% { transform:translateX(-2px); } 80% { transform:translateX(2px); } }
+  .hudpop { display:inline-block; animation:hudPop .55s ease; color:#ffd94a !important; }
+  .hudgood { display:inline-block; animation:hudPop .55s ease; color:#7dd87d !important; }
+  .hudbad { display:inline-block; animation:hudShake .45s ease; color:#e06868 !important; }
+  @keyframes screenShake { 0%,100% { transform:translate(0,0); } 20% { transform:translate(-4px,2px); } 40% { transform:translate(4px,-2px); } 60% { transform:translate(-3px,-1px); } 80% { transform:translate(3px,1px); } }
+  .screenshake { animation:screenShake .3s ease; }
+  @keyframes awardPulse { 0% { transform:scale(1); } 40% { transform:scale(1.18); color:#ffd94a; } 100% { transform:scale(1); } }
+  .awardpop { display:inline-block; animation:awardPulse .8s ease; }
+  .colsec { margin:10px 0 4px; font-size:14px; color:#e8c87a; }
+  .coltiles { display:flex; flex-wrap:wrap; gap:6px; }
+  .coltile { width:86px; padding:7px 4px 5px; background:#2e2115; border:1px solid #5a4326; border-radius:8px; text-align:center; position:relative; }
+  .coltile .ic { font-size:26px; display:block; }
+  .coltile .tt { font-size:9.5px; line-height:1.25; color:#d8c9a8; display:block; margin-top:3px; }
+  .coltile.miss .ic { filter:grayscale(1); opacity:.3; }
+  .coltile.miss .tt { color:#8a7c60; }
+  .coltile.justgot { border-color:#ffd94a; box-shadow:0 0 12px #ffd94a; }
+  /* The collection reveal is an EVENT (Roy, 2026-10-17): the tile starts
+     grayed like its neighbours, then bursts into colour with a gold flash
+     and a shower of sparkles as the album glides to it. */
+  @keyframes tileReveal { 0% { transform:scale(.9); filter:grayscale(1) brightness(.7); } 30% { transform:scale(1.24); filter:grayscale(0) brightness(1.18); box-shadow:0 0 0 3px #ffd94a, 0 0 30px 9px rgba(255,217,74,.65); } 55% { transform:scale(1.04); } 75% { transform:scale(1.12); } 100% { transform:scale(1); filter:grayscale(0); box-shadow:0 0 0 2px #ffd94a, 0 0 14px 3px rgba(255,217,74,.4); } }
+  .coltile.justgot { animation:tileReveal 1.15s ease .5s both; z-index:2; }
+  @keyframes sparkFly { 0% { transform:translate(-50%,-50%) scale(.5); opacity:0; } 20% { opacity:1; } 100% { transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.25); opacity:0; } }
+  .coltile .spark { position:absolute; left:50%; top:36%; color:#ffd94a; pointer-events:none; opacity:0; animation:sparkFly .9s ease-out both; z-index:3; }
+  .uphead { background:#241a10; margin:-14px -18px 6px; padding:14px 18px 8px; border-bottom:1px solid #8a6d3f; flex:none; }
+  .uphead .titlerow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .uphead h2 { margin:0; }
+  #nextDayBtn { white-space:nowrap; }
+  /* Phones (Roy's screenshot, 2026-10-16): panels were sized against the
+     short canvas box, so the market header (wrapped title + 3-line balance)
+     ate the panel and the cards got a sliver. On narrow screens panels
+     pin to the viewport at near-full height, and the header goes compact
+     with the title on one line. */
+  @media (max-width: 760px) {
+    .panel { position:fixed; left:50%; top:50%; width:94vw; max-width:94vw; max-height:92dvh; z-index:50; }
+    #upgradesPanel { max-height:92dvh; }
+    #upgradesPanel h2 { font-size:19px; white-space:nowrap; }
+    #nextDayBtn { font-size:13px; padding:7px 10px; }
+    .upcard { width:97px; }
+  }
   .panel h2 { color:#e8c87a; font-size:18px; margin-bottom:10px; }
   .panel p { margin:5px 0; font-size:15px; }
   .panel .row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center; }
@@ -38,6 +113,10 @@
   button.primary { background:#8a6d1f; border-color:#e8c87a; font-weight:bold; }
   button:disabled { opacity:.4; cursor:default; }
   #offerVal { font-size:22px; color:#ffd98a; min-width:70px; text-align:center; }
+  #barWrap { position:relative; margin:17px 0 20px; }
+  #trueMark { position:absolute; top:19px; transform:translateX(-50%); color:#ffd94a; font-size:11.5px; line-height:1; white-space:nowrap; pointer-events:none; text-shadow:0 1px 3px rgba(0,0,0,.7); }
+  #trueMark .tt { font-size:11px; }
+  #askTri { position:absolute; top:-16px; transform:translateX(-50%); color:#e8c87a; font-size:12px; line-height:1; pointer-events:none; }
   input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:16px; border-radius:8px;
                       background:#5a4326; outline:none; margin:8px 0 2px; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:27px; height:27px; border-radius:50%;
@@ -48,6 +127,8 @@
                background:#c07f3a; border:2px solid #ffd98a; font-weight:bold; color:#fff8ea;
                box-shadow:0 4px 16px rgba(0,0,0,.55); }
   #actionBtn:hover { background:#d18f47; }
+  @keyframes shakeX { 0%,100% { transform:translateX(0); } 20% { transform:translateX(-7px); } 40% { transform:translateX(6px); } 60% { transform:translateX(-4px); } 80% { transform:translateX(3px); } }
+  #actionBtn.shake { animation:shakeX .38s ease; border-color:#e08a8a; }
   .swatch { display:inline-block; width:12px; height:16px; border-radius:2px; vertical-align:-2px; margin-right:5px; border:1px solid rgba(0,0,0,.4); }
   .coin { display:inline-block; width:.84em; height:.84em; border-radius:50%; vertical-align:-.13em;
           background:radial-gradient(circle at 35% 30%, #ffedb0, #f2c230 55%, #cf9a10);
@@ -66,10 +147,12 @@
 <h1>📚 Bookstore Sim — Prototype</h1>
 <div id="hud">
   <span><span class="coin"></span> <b id="coins">200</b></span>
+  <span id="shardBox">✦ <b id="shards">0</b></span>
   <span>📅 <b id="dayNum">Day 1</b></span>
   <span>⏳ <b id="clock">3:30</b></span>
-  <span><b id="repFace">😐</b> <b id="rep">25</b></span>
+  <span id="repBox"><b id="repFace">😐</b> <b id="rep">25</b></span>
   <span><button id="musicBtn" style="padding:4px 10px; font-size:13px;">🔊 Music on</button></span>
+  <span><button id="colBtn" style="padding:4px 10px; font-size:13px;">📚 <b id="colCount">0/100</b></button></span>
   <span id="buildTag" style="opacity:.55; font-size:11px;"></span>
 </div>
 <div id="wrap">
@@ -82,72 +165,79 @@
     <p>Your appraisal: <b id="haggleRange" style="color:#35c4b5;"></b> <span style="color:#35c4b5;">(teal band on the bar)</span></p>
     <p>Seller asks: <b id="haggleAsk"></b> · Their patience is draining…</p>
     <p style="margin-top:10px;" id="offerLine">Your offer: <span id="offerVal">0</span> <span class="coin"></span></p>
-    <input type="range" id="offerSlider" min="0" step="1" value="0">
+    <div id="barWrap">
+      <div id="askTri">▼</div>
+      <input type="range" id="offerSlider" min="0" step="1" value="0">
+      <div id="trueMark" style="display:none;"><span class="tt">▲</span> <span id="trueLbl"></span></div>
+    </div>
     <div class="row" id="haggleButtons">
       <button class="primary" id="offerBtn">Make offer</button>
       <button id="declineBtn">Decline</button>
+      <button id="dismissBtn">Later</button>
     </div>
     <p id="haggleMsg" style="color:#ffd98a; min-height:18px;"></p>
     <div id="haggleReveal"></div>
   </div>
 
-  <div class="panel" id="restockPanel" style="display:none;">
+  <div class="panel storybar" id="restockPanel" style="display:none;">
     <h2>🚪 A knock at the door…</h2>
     <p id="restockBody"></p>
     <div class="row"><button class="primary" id="restockYes">Deal</button><button id="restockNo">No thanks</button></div>
   </div>
 
+  <div class="panel storybar" id="wagePanel" style="display:none;">
+    <p id="wageBody"></p>
+    <div class="row"><button class="primary" id="wagePay">Pay</button><button id="wageFace" style="display:none;">Face the music…</button></div>
+  </div>
   <div id="closeOverlay"><div class="big" id="closeTitle">🌙 Day 1 complete</div><div class="sub">You lock up, sweep the floor, and count the till…</div></div>
 
   <div class="panel" id="upgradesPanel" style="display:none; width:700px; max-width:94%;">
-    <h2>🔧 Night Market — Upgrades</h2>
-    <p style="text-align:center; margin:2px 0 4px;">You have <b id="upCoins">0</b> <span class="coin"></span> · Anything you buy applies from tomorrow.</p>
-    <div class="upcards">
-      <div class="upcard" id="upCard-supplier">
-        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="14" y="34" width="32" height="18" rx="3" fill="#7a3b8c"/><rect x="26" y="24" width="8" height="12" fill="#e8b48c"/><circle cx="30" cy="19" r="7.5" fill="#e8b48c"/><rect x="17" y="13.5" width="26" height="3.6" rx="1.8" fill="#232028"/><rect x="23" y="5" width="14" height="9" rx="2" fill="#232028"/><rect x="21.5" y="18" width="17" height="4" rx="2" fill="#14100c"/><rect x="41" y="36" width="11" height="14" rx="2" fill="#ffd94a" transform="rotate(14 46 43)"/><text x="46.5" y="46.5" font-size="9" font-weight="bold" fill="#7a5410" text-anchor="middle" transform="rotate(14 46 43)">$</text></svg></div>
-        <h3>Sleazy Book Supplier</h3>
-        <p>Knows a guy. When your shelves run completely dry, he slinks in and sells at full retail — and he takes over the nightly restock too: 25 a book instead of the Man's 30.</p>
-        <button class="primary upbuy" data-up="supplier">20 <span class="coin"></span></button>
-      </div>
-      
-      <div class="upcard" id="upCard-marketing">
-        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><path d="M10 26 L34 16 L34 44 L10 34 Z" fill="#c4503c"/><rect x="6" y="25" width="5" height="10" rx="2" fill="#8c3527"/><path d="M16 35 L20 35 L22 47 L16 47 Z" fill="#6e4630"/><path d="M40 20 a14 14 0 0 1 0 20" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M45 15 a21 21 0 0 1 0 30" stroke="#ffd94a" stroke-width="3" fill="none" stroke-linecap="round" opacity=".55"/></svg></div>
-        <h3>Marketing</h3>
-        <p>A flyer run, a sandwich board out front, chalk arrows on the sidewalk. Word gets around: <b>+5 reputation</b>. Once per night.</p>
-        <button class="primary upbuy" data-up="marketing">20 <span class="coin"></span></button>
-      </div>
-      <div class="upcard" id="upCard-bookcase">
-        <div class="icon"><svg width="60" height="60" viewBox="0 0 60 60"><rect x="12" y="6" width="36" height="48" fill="#7d5a30"/><rect x="15" y="9" width="30" height="42" fill="#43301d"/><line x1="15" y1="23" x2="45" y2="23" stroke="#96733d" stroke-width="2.6"/><line x1="15" y1="37" x2="45" y2="37" stroke="#96733d" stroke-width="2.6"/><rect x="18" y="13" width="5" height="10" fill="#4f7d4a"/><rect x="24" y="12" width="5" height="11" fill="#7a9e43"/><rect x="33" y="13" width="5" height="10" fill="#5a8c6e"/><rect x="20" y="27" width="5" height="10" fill="#8a5fa0"/><rect x="26" y="26" width="5" height="11" fill="#6a4a8c"/><rect x="36" y="27" width="5" height="10" fill="#a06ab0"/><rect x="19" y="41" width="5" height="10" fill="#4f7d4a"/><rect x="30" y="40" width="5" height="11" fill="#8a5fa0"/><rect x="37" y="41" width="5" height="10" fill="#7a9e43"/></svg></div>
-        <h3>Bookcase Upgrade</h3>
-        <p>Proper three-tier bookcases, built overnight. Each case holds <b>9 books</b> instead of 6 — room to breathe, room to stock.</p>
-        <button class="primary upbuy" data-up="bookcase">20 <span class="coin"></span></button>
-      </div>
+    <div class="uphead">
+      <div class="titlerow"><h2>🌙 Night Market</h2><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
+      <div style="margin-top:4px; font-size:15px; color:#e8c87a;">🪙 <span id="upCoins">0</span> &nbsp;·&nbsp; ✦ <span id="upShards">0</span> &nbsp;·&nbsp; <span id="upRepFace">😐</span> <span id="upRep">25</span></div>
     </div>
-    <div class="row"><button class="primary" id="nextDayBtn">Open next day ▸</button></div>
+    <div id="upScroll"><div class="upcards" id="upCards"></div></div>
+    <div id="upPop"><div class="popcard"><button id="upPopClose">✕</button><div class="popicon" id="upPopIcon"></div><h3 id="upPopName"></h3><p id="upPopDesc"></p><p class="popstatus" id="upPopStatus"></p></div></div>
   </div>
 
-  <div class="panel" id="rentPanel" style="display:none;">
+  <div class="panel storybar" id="rentPanel" style="display:none;">
     <h2>🚪 A knock at the door…</h2>
     <p id="rentBody"></p>
     <div class="row"><button class="primary" id="rentPay">Pay the rent</button><button id="rentFace" style="display:none;">Face the music…</button></div>
   </div>
 
-  <div class="panel" id="winPanel" style="display:none;">
+  <div class="panel storybar" id="winPanel" style="display:none;">
     <h2 id="winTitle">🎉 Survived week!</h2>
     <p>Rent paid in cash. The Mysterious Man tips his hat and vanishes into the night — the shop is yours for another week.</p>
     <div class="row"><button class="primary" id="winOk">Keep going ▸</button></div>
   </div>
 
-  <div class="panel" id="bankruptPanel" style="display:none;">
+  <div class="panel storybar" id="bankruptPanel" style="display:none;">
     <h2 id="bankruptTitle">💸 Bankrupt!</h2>
     <p id="bankruptBody">You can't make the rent. The deed goes back to the Mysterious Man… unless. Unless <i>you</i> can find a buyer first.</p>
     <div class="row"><button class="primary" id="bankruptOk">One last idea… ▸</button></div>
   </div>
 
-  <div class="panel" id="endPanel" style="display:none;">
+  <div class="panel storybar" id="endPanel" style="display:none;">
     <h2>🔄 The cycle continues</h2>
     <p>Somewhere, a well-meaning soul is about to have a very educational week.</p>
     <div class="row"><button class="primary" id="startOverBtn">Start over</button></div>
+  </div>
+
+  <div class="panel" id="titlePanel" style="display:block;">
+    <h2>📚 Bookstore Sim</h2>
+    <canvas id="titleArt" width="640" height="340"></canvas>
+    <p id="titleSave"></p>
+    <div class="row" style="justify-content:center; gap:10px;">
+      <button class="primary" id="continueBtn" style="display:none;">▶ Continue</button>
+      <button class="primary" id="newGameBtn">New Game</button>
+    </div>
+  </div>
+  <div class="panel" id="colPanel" style="display:none;">
+    <h2 style="margin-bottom:2px;">📚 Collections <span id="colHeadCount" style="font-size:14px; color:#e8c87a;"></span></h2>
+    <p id="colBanner" style="color:#ffd98a; min-height:18px; margin:2px 0 4px;"></p>
+    <div id="colGrid" style="overflow-y:auto; max-height:58vh; text-align:left; padding-right:4px;"></div>
+    <div class="row"><button class="primary" id="colClose">Back to the shop</button></div>
   </div>
 
   <div class="panel" id="tallyPanel">
@@ -164,7 +254,6 @@
 
   </div>
 </div>
-<div id="hint"></div>
 
 <script>
 "use strict";
@@ -173,24 +262,51 @@ const DAY_LEN = 150;                 // one day = 2 minutes 30 seconds (Roy tune
 const SPEED_MULT = 1.25;             // all character movement ×1.25 (Roy, 2026-10-16)
 const PATIENCE_MULT = 0.75;          // customers keep 75% of original patience (Roy, 2026-10-16)
 const BUILD_LABEL = 'stable';           // 'dev' in the iteration repo; promotion to the stable repo seds this to 'stable'
-const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4' };
-const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction' };
+const GENRE_COLOR = { green: '#3fae5a', purple: '#8b4fc4', poetry: '#e08a3c', comics: '#3cc4b0' };
+const GENRE_NAME = { green: 'Non-fiction', purple: 'Fiction', poetry: 'Poetry', comics: 'Comics' };
+const ALL_GENRES = ['green', 'purple', 'poetry', 'comics'];
+const BOOK_VALUES = { green: { n: [20, 38], s: [90, 140] }, purple: { n: [30, 52], s: [120, 190] },
+                      poetry: { n: [26, 46], s: [100, 160] }, comics: { n: [24, 44], s: [95, 150] } };
+let activeGenres = ['green', 'purple'];   // genres in play today (set by applyUpgrades)
+let casePlan = ['green', 'purple'];       // genre of each case slot, in slot order (run-scoped)
 const CARRY_MAX = 4;
-let SHELF_CAP = 6;                   // max books per shelf
+let SHELF_CAP = 6;                   // books per case (legacy name; capacity is per-genre via capacityOf)
 const COIN = '<span class="coin"></span>';
 
 // ---------- Layout ----------
 const W = 960, H = 600;
 let SHELF_TIERS = 2;                 // tiers per bookcase
-let upgrades = { supplier: false, appraisal: false, bookcase: false };
-let supplierUsedToday = false, marketingTonight = false;
+function freshUpgrades() { return { supplier: false, reliable: false, appraisal: false, bookcase: false, bookcase2: false, speed: false, speed2: false, cat: false, cat2: false, chair: false, checker: false, checker2: false, poetry: false, comics: false, shelves: 0 }; }
+let upgrades = freshUpgrades();
+let marketingTonight = false;
+let marketingActive = false;   // marketing bought last night → the sign + chalk marks are out front today
 // Floor plan per Roy's sketch (2026-10-16): bookcases in the two TOP CORNERS,
 // counters along the bottom, door at the bottom-left. Room for SIX more
 // bookshelves after these two: two more on the back wall, four as islands.
-const SHELF = {
-  green:  { x: 36,  y: 40, w: 108, h: 116 },
-  purple: { x: 816, y: 40, w: 108, h: 116 }
-};
+// Cases are dynamic now: casePlan assigns a genre to each slot in order
+// (Extra Shelf purchases and new genres append slots during a run).
+const SLOT_POS = [ { x: 36, y: 40 }, { x: 816, y: 40 },
+  { x: 176, y: 40 }, { x: 316, y: 40 }, { x: 456, y: 40 }, { x: 596, y: 40 },
+  { x: 316, y: 246 }, { x: 596, y: 246 } ];
+let cases = [];                          // built by buildCases(): {genre,x,y,w,h}
+function caseHeight() { return (upgrades.bookcase || upgrades.bookcase2) ? 174 : 116; }
+function buildCases() {
+  cases = casePlan.map((g, i) => ({ genre: g, x: SLOT_POS[i].x, y: SLOT_POS[i].y, w: 108, h: caseHeight() }));
+  OBSTACLES.length = 0; OBSTACLES.push(...cases, BUY_COUNTER, SELL_COUNTER);
+}
+function casesOf(g) { return cases.filter(c => c.genre === g); }
+// Shelves are SLOTS now (Roy, 2026-10-17): a customer takes a RANDOM book
+// and its slot stays empty — the other books don't shuffle along; shelving
+// puts a book in a RANDOM empty slot. shelfStock[g] is a fixed-length slot
+// array (book or null), indexed across the genre's cases.
+function stockCount(g) { const a = shelfStock[g] || []; let n = 0; for (const b of a) if (b) n++; return n; }
+function emptySlotIdx(g) { const a = shelfStock[g] || []; const out = []; for (let i = 0; i < capacityOf(g); i++) if (!a[i]) out.push(i); return out; }
+function takeRandomBook(g) { const a = shelfStock[g]; if (!a) return null; const filled = []; for (let i = 0; i < a.length; i++) if (a[i]) filled.push(i); if (!filled.length) return null; const i = filled[Math.floor(Math.random() * filled.length)]; const b = a[i]; a[i] = null; return b; }
+function shelveBook(g, b) { const es = emptySlotIdx(g); if (!es.length) return false; shelfStock[g][es[Math.floor(Math.random() * es.length)]] = b; return true; }
+function normalizeSlots() { for (const g of activeGenres) { if (!shelfStock[g]) shelfStock[g] = []; while (shelfStock[g].length < capacityOf(g)) shelfStock[g].push(null); } }
+function firstCase(g) { return casesOf(g)[0] || { x: 36, y: 40, w: 108, h: caseHeight() }; }
+function caseCap() { return upgrades.bookcase2 ? 12 : upgrades.bookcase ? 9 : 6; }
+function capacityOf(g) { return casesOf(g).length * caseCap(); }
 // Space kept free for six more (skinny) bookshelves — layout data only,
 // deliberately NOT drawn (Roy: no gray outlines).
 const RESERVED_SLOTS = [
@@ -198,42 +314,184 @@ const RESERVED_SLOTS = [
   { x: 456, y: 40,  w: 108, h: 116 }, { x: 596, y: 40,  w: 108, h: 116 },
   { x: 316, y: 246, w: 108, h: 116 }, { x: 596, y: 246, w: 108, h: 116 }
 ];
-const BUY_COUNTER  = { x: 90,  y: 452, w: 300, h: 52 };
-const SELL_COUNTER = { x: 570, y: 452, w: 300, h: 52 };
-const DOOR = { x: 84, y: 588 };
-const OBSTACLES = [ SHELF.green, SHELF.purple, BUY_COUNTER, SELL_COUNTER ];
+const BUY_COUNTER  = { x: 90,  y: 420, w: 300, h: 52 };   // moved up a bit (Roy, 2026-10-16) so the counters clear the door
+const SELL_COUNTER = { x: 570, y: 420, w: 300, h: 52 };
+const DOOR = { x: 84, y: 534 };   // the threshold: just inside the storefront, ABOVE the pavement (Roy, 2026-10-16). People spawn outside (below the canvas) and come in through it.
+const ROOM_MAX = 8;   // at most 8 people in the shop (Roy, 2026-10-18): anyone beyond that queues on the pavement, patience still draining
+function insideCount() { return customers.reduce((n, c) => n + (c.inside ? 1 : 0), 0); }
+function queueSlot(i) { return i < 22 ? { x: 140 + i * 38, y: 562 } : { x: 140 + (i - 22) * 38, y: 585 }; }   // the outside line along the pavement; past 22 it wraps to a second row on the street edge (slots ran off-canvas before — Codex sim)
+let OBSTACLES = [];   // rebuilt by buildCases() (cases + counters)
 
 // ---------- State ----------
 let coins, shelfStock, carry, customers, dayT, spawnT, running, over;
 let day = 1, dayStartCoins = 200;
-let reputation = 25;                 // ⭐ start ~25; −1 per declined sale / patience walkout
-function repDown() {
+let reputation = 25;                 // ⭐ start ~25; −1 per declined sale / patience walkout; +1 at a 10% chance per happy customer (Roy, 2026-10-17)
+function repDown(c) {
   reputation = Math.max(0, reputation - 1);
-  refreshHUD();
+  refreshHUD(); sfx('bloop');   // Roy (2026-10-17): a sad bloop whenever a customer leaves unhappy (every repDown is one)
+  repDownFX(c);
   if (reputation <= 0 && running && !over) gameOverRep();
 }
+// Roy (2026-10-17): no more daily +1 — instead each successfully served
+// customer has a 10% chance to bump reputation, with a boop and a smiley.
+let floaters = [];   // little rising emoji (😊 on a rep bump)
+function happyCustomer(c) {
+  if (Math.random() >= 0.10) return;
+  reputation = Math.min(100, reputation + 1);
+  refreshHUD(); sfx('boop'); hudPop('repBox', 'hudgood');
+  if (c) { floaters.push({ x: c.x, y: c.y - 48, t: 0, txt: '😊' }); floaters.push({ x: c.x + 14, y: c.y - 62, t: 0, arrow: 'up' }); bursts.push(makeBurst(c.x, c.y - 30, '#7dd87d', '✚')); }
+}
+// ---------- Drama pass (Roy, 2026-10-17): shard gains and rep swings
+// should FEEL like events — flying shards, bursts, glows, HUD pops, shake.
+let shardFlights = [], bursts = [], goldGlowT = 0, redGlowT = 0;
+function makeBurst(x, y, color, glyph) {
+  const ps = [];
+  for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + rf(-0.2, 0.2); ps.push({ x, y, vx: Math.cos(a) * rf(28, 74), vy: Math.sin(a) * rf(28, 74) - 22, t: 0, color, glyph: i % 3 === 0 ? glyph : '✦' }); }
+  return { ps };
+}
+function hudPop(id, cls) {
+  const el = $(id); if (!el || !el.classList) return;
+  el.classList.remove('hudpop', 'hudgood', 'hudbad'); void el.offsetWidth; el.classList.add(cls);
+  setTimeout(() => { try { el.classList.remove(cls); } catch (e) {} }, 650);
+}
+function hudTarget() {
+  try {
+    const r = $('shardBox').getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+    return { x: (r.left + r.width / 2 - cr.left) * (W / cr.width), y: (r.top + r.height / 2 - cr.top) * (H / cr.height) };
+  } catch (e) { return { x: 150, y: -14 }; }
+}
+function celebrateShards(n, x, y) {
+  const tgt = hudTarget();
+  for (let i = 0; i < n; i++) shardFlights.push({ x0: x, y0: y, x1: tgt.x, y1: tgt.y, t: -i * 0.12 });
+  bursts.push(makeBurst(x, y, '#ffd94a', '✦'));
+  goldGlowT = 0.55; sfx('shard');
+}
+function repDownFX(c) {
+  redGlowT = 0.5; hudPop('repBox', 'hudbad');
+  const w = $('wrap'); if (w && w.classList) { w.classList.remove('screenshake'); void w.offsetWidth; w.classList.add('screenshake'); setTimeout(() => { try { w.classList.remove('screenshake'); } catch (e) {} }, 350); }
+  if (c) { floaters.push({ x: c.x, y: c.y - 62, t: 0, arrow: 'down' }); bursts.push(makeBurst(c.x, c.y - 30, '#e06868', '✚')); }
+}
 function gameOverRep() {
+  if (haggle && haggle.dealt) creditDeal(haggle.seller, false);   // a purchase already paid for still counts (Codex review)
   over = true; running = false; haggle = null;
   $('hagglePanel').style.display = 'none';   // close whatever was mid-flight; refreshHUD() settles the HUD
   showBankrupt('rep');
 }
-function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0, rentPaid: 0, restockBy: '' }; }
+function freshStats() { return { sold: 0, revenue: 0, bought: 0, spent: 0, costOfSold: 0, walkWait: 0, walkStock: 0, turnedAway: 0, wasted: 0, wastedValue: 0, restocked: 0, restockCost: 0, restockDeclined: 0, rentPaid: 0, wagesPaid: 0, restockBy: '', shards: 0, sweptBack: 0 }; }
 let stats, haggle; // haggle = { seller, offer }
 let startNetWorth = 0;
 let player;
 
-function makeBook(genre, special) {
+function makeBook(genre, special, titled) {
   // 'value' is the book's true sell price — fixed per book, but HIDDEN from the
   // player, who only ever sees an appraisal range around it.
-  let value;
-  if (special) value = genre === 'green' ? rnd(90, 140) : rnd(120, 190);
-  else         value = genre === 'green' ? rnd(20, 38)  : rnd(30, 52);
-  return { genre, special: !!special, value, sellPrice: value, cost: 0 };   // cost = what we paid (0 for opening stock)
+  const bv = BOOK_VALUES[genre] || BOOK_VALUES.green;
+  const value = special ? rnd(bv.s[0], bv.s[1]) : rnd(bv.n[0], bv.n[1]);
+  const b = { id: ++bookSeq, genre, special: !!special, value, sellPrice: value, cost: 0, title: null, col: null };   // cost = what we paid (0 for opening stock)
+  if (titled && Math.random() < 0.3) { const pick = pickCollectionBook(genre); if (pick) { b.title = pick.title; b.col = pick.col; b.icon = pick.icon; } }   // ~30% of seller books are collectible titles
+  return b;
 }
 function appraisalRange(book) {
   const spread = (book.special ? 0.45 : 0.35) * (upgrades.appraisal ? 0.5 : 1);   // appraisal course halves it
   return [Math.max(1, Math.round(book.value * (1 - spread))), Math.round(book.value * (1 + spread))];
 }
+// ---------- Collections (Roy, 2026-10-16) ----------
+// 100 collectible books in themed sets of 2-5: 50 fiction (purple), 50
+// non-fiction (green). Sellers sometimes carry them; BUYING one un-grays
+// its icon on the collection screen, and completing a set awards Star
+// Shards: 1 for a 2-3 book set, 2 for a 4-5 book set. The full catalog
+// also lives in collections.md for review.
+const COLLECTIONS = [
+  { id: 'cats-clothes', name: 'Cats in Clothes', genre: 'purple', books: [['Puss in Boots','🥾'],['Kittens in Mittens','🧤'],['The Cat in the Hat','🎩'],['A Tiger in a Tutu','🩰'],['Sir Whiskers in Velvet','🧥']] },
+  { id: 'dragons-badly', name: 'Dragons Behaving Badly', genre: 'purple', books: [['The Dragon Who Hoarded Socks','🧦'],["A Dragon's Guide to Arson (Don't)",'🔥'],['The Vegetarian Dragon','🥦'],["Dragons Can't Swim",'🏊'],["The Last Dragon's Dentist",'🦷']] },
+  { id: 'moon-missions', name: 'Moon Missions', genre: 'purple', books: [['The Accidental Astronaut','🚀'],['Moonbase Catastrophe','🌕'],['One Small Step for Ham','🐹'],["The Mars Rover's Diary",'🤖'],['Gravity Is Optional','🪐']] },
+  { id: 'pirates-pantry', name: 'Pirates of the Pantry', genre: 'purple', books: [['Captain Crumbbeard','🏴‍☠️'],['The Pickle Mutiny','🥒'],['Treasure Map in the Freezer','🗺️'],['The Soup Spoon Armada','🥄']] },
+  { id: 'haunted-houses', name: 'Haunted Houses', genre: 'purple', books: [['The House That Hummed','🏚️'],["Ghosts Don't Pay Rent",'👻'],['The Attic Tenant','🕯️'],['A Very Polite Haunting','🫖']] },
+  { id: 'robots-feelings', name: 'Robots with Feelings', genre: 'purple', books: [['The Toaster Who Loved','💌'],['My Robot Wrote a Poem','📝'],['Batteries Not Included, Feelings Are','🔋'],["The Vacuum's Existential Crisis",'🌀']] },
+  { id: 'witch-cookbook', name: "Witches' Cookbook Tales", genre: 'purple', books: [['Eye of Newt, Hold the Newt','👁️'],['The Cauldron Cookbook','🍲'],['Baking with Broomsticks','🧹']] },
+  { id: 'knights-neigh', name: 'Knights Who Say Neigh', genre: 'purple', books: [['Sir Gallopsalot','🐎'],['The Jousting Tournament Mix-Up','⚔️'],["A Knight's Tale of Hay",'🌾']] },
+  { id: 'mermaid-post', name: 'Mermaid Postal Service', genre: 'purple', books: [['Letters from the Deep','✉️'],['The Bottled Post','🍾'],['Special Delivery to Atlantis','🐚']] },
+  { id: 'vampire-veg', name: 'Vampire Vegetarians', genre: 'purple', books: [['Count Broccula','🧛'],['Garlic Is a Food Group','🧄']] },
+  { id: 'clockwork-zoo', name: 'The Clockwork Zoo', genre: 'purple', books: [['The Mechanical Elephant','🐘'],['Wind-Up Whale Songs','🐋']] },
+  { id: 'goblin-bookclub', name: "Goblins' Book Club", genre: 'purple', books: [['Goblins Read the Classics','📖'],['The Book Club Schism','💥']] },
+  { id: 'time-grandmas', name: 'Time-Traveling Grandmas', genre: 'purple', books: [['Nana vs. the Dinosaurs','🦖'],['Bingo Night in Ancient Rome','🏛️']] },
+  { id: 'sock-gnomes', name: 'Sock Gnome Mysteries', genre: 'purple', books: [['The Case of the Missing Left Sock','🔍'],['Gnomes of the Laundry Room','🫧']] },
+  { id: 'bears-boats', name: 'Bears in Boats', genre: 'purple', books: [['The Bear Who Rowed to Breakfast','⛵'],["Grizzly's Guide to Knots Afloat",'🪢']] },
+  { id: 'last-lighthouse', name: 'The Last Lighthouse', genre: 'purple', books: [['Keeper of the Last Light','🔦'],['Storm over Gull Rock','🌊']] },
+  { id: 'backyard-birds', name: 'Backyard Birds', genre: 'green', books: [['Warblers of the Wetlands','🐦'],['The Crow Who Knows You','🐦‍⬛'],['Hummingbirds at Home','🌺'],['Owls After Dark','🦉'],['The Backyard Bird Census','📋']] },
+  { id: 'mushroom-hunting', name: 'Mushroom Hunting Safely', genre: 'green', books: [['Know Your Amanitas','🍄'],["The Forager's Field Notebook",'🎒'],['Edible? A Flowchart','🌲'],['Fungi of the Forest Floor','🍂'],['Spore Prints & Sketches','🎨']] },
+  { id: 'sourdough', name: 'Sourdough Science', genre: 'green', books: [['The Starter Diaries','🫙'],['Crumb Structure 101','🍞'],['Fermentation for the Impatient','⏱️'],['The Perfect Crust','🔬']] },
+  { id: 'volcanoes', name: 'Volcanoes!', genre: 'green', books: [['Anatomy of an Eruption','🌋'],['The Ring of Fire','🧭'],['Pompeii, Preserved','🏺'],['How to Read a Lava Flow','🪨']] },
+  { id: 'beekeeping', name: 'Beekeeping for Beginners', genre: 'green', books: [['Your First Hive','🐝'],['The Queen & Her Court','👑'],['Honey Harvest Day','🍯'],['Bees Are Not Pets (Yes They Are)','🌼']] },
+  { id: 'cast-iron', name: 'Cast Iron Cooking', genre: 'green', books: [['Seasoning Secrets','🍳'],['One Pan, Every Dinner','🥘'],['The Dutch Oven Diaries','👨‍🍳'],['Rust Rescue & Care','🛠️']] },
+  { id: 'night-sky', name: 'The Night Sky', genre: 'green', books: [['Constellations for Insomniacs','✨'],['The Messier Marathon','🔭'],['Shooting Stars & Satellites','🛰️'],['Your First Telescope','🌌']] },
+  { id: 'knot-tying', name: 'Knot Tying for Landlubbers', genre: 'green', books: [['Twenty Knots Worth Knowing','🧶'],['Knots for Sailors','⚓'],['The Bowline & Other Friends','🐇']] },
+  { id: 'goldfish', name: 'Train Your Goldfish', genre: 'green', books: [['Yes, They Remember','🐠'],['Hoop Dreams: Goldfish Edition','🏀'],['The Psychology of the Bowl','🔮']] },
+  { id: 'maps-compasses', name: 'Maps & Compasses', genre: 'green', books: [['Reading the Land','🗾'],['Lost & Found: Navigation Stories','🧭'],["Cartographers' Secrets",'📐']] },
+  { id: 'houseplants', name: 'Houseplant Rescues', genre: 'green', books: [['The Fern Hospital','🌿'],['Water Less, Love More','💧'],['Propagation Nation','🌱']] },
+  { id: 'chess', name: 'Chess Openings', genre: 'green', books: [['The Italian Game','♟️'],['Gambits & Coffee','☕']] },
+  { id: 'fermentation', name: 'Fermentation Fun', genre: 'green', books: [['Pickle Everything','🥬'],['The Kimchi Diaries','🌶️']] },
+  { id: 'whales', name: 'Whales of the Salish Sea', genre: 'green', books: [['Orca Matrilines','🐳'],["The Humpback's Song",'🎵']] },
+  { id: 'rock-collecting', name: 'Rock Collecting', genre: 'green', books: [['Agates of the Coast','💎'],['Fossils in Your Backyard','🦴']] },
+];
+const colById = id => COLLECTIONS.find(c => c.id === id);
+const collectionAward = c => c.books.length <= 3 ? 1 : 2;
+function pickCollectionBook(genre) {
+  const pool = [];
+  for (const c of COLLECTIONS) if (c.genre === genre) for (const [title, icon] of c.books) pool.push({ title, icon, col: c.id });
+  if (!pool.length) return null;
+  const unowned = pool.filter(b => !collected[b.title]);
+  const src = (unowned.length && Math.random() < 0.8) ? unowned : pool;
+  return src[Math.floor(Math.random() * src.length)];
+}
+let pendingColCut = null;   // set on a first-time collection purchase; the collection screen opens right after the reveal
+function noteCollectionPurchase(book) {
+  if (!book || !book.col || collected[book.title]) return null;
+  collected[book.title] = true;
+  const c = colById(book.col);
+  let award = 0;
+  if (c && c.books.every(([t]) => collected[t]) && !collectionsDone[c.id]) {
+    collectionsDone[c.id] = true;
+    award = collectionAward(c);
+    shards += award;
+  }
+  saveMeta(); updateColCount();
+  return { colId: book.col, title: book.title, award };
+}
+function updateColCount() { const n = Object.keys(collected).length; const el = $('colCount'); if (el) el.textContent = n + '/100'; const h = $('colHeadCount'); if (h) h.textContent = '— ' + n + '/100'; }
+function renderCollections(highlightTitle, banner) {
+  $('colBanner').textContent = banner || '';
+  let html = '';
+  for (const c of COLLECTIONS) {
+    const got = c.books.filter(([t]) => collected[t]).length;
+    html += '<div class="colsec">' + (c.genre === 'purple' ? '🟣' : '🟢') + ' ' + c.name + ' — ' + got + '/' + c.books.length + (collectionsDone[c.id] ? ' ✓ +' + collectionAward(c) + '✦' : ' · complete it for +' + collectionAward(c) + '✦') + '</div><div class="coltiles">';
+    for (const [title, icon] of c.books) {
+      const owned = !!collected[title];
+      const sparks = title === highlightTitle ? '<span class="spark" style="--dx:-30px;--dy:-34px;animation-delay:.62s;font-size:13px">✦</span><span class="spark" style="--dx:26px;--dy:-38px;animation-delay:.7s;font-size:11px">✦</span><span class="spark" style="--dx:-34px;--dy:8px;animation-delay:.78s;font-size:11px">✦</span><span class="spark" style="--dx:32px;--dy:12px;animation-delay:.86s;font-size:14px">✦</span><span class="spark" style="--dx:0px;--dy:-46px;animation-delay:.94s;font-size:12px">✦</span>' : '';
+      html += '<div class="coltile' + (owned ? '' : ' miss') + (title === highlightTitle ? ' justgot' : '') + '"><span class="ic">' + icon + '</span><span class="tt">' + (owned ? title : '???') + '</span>' + sparks + '</div>';   // uncollected titles stay secret until the book is received (Roy, 2026-10-17)
+    }
+    html += '</div>';
+  }
+  $('colGrid').innerHTML = html;
+}
+let colOpen = false;
+function openCollections(cut) {
+  let banner = '';
+  if (cut) {
+    const c = colById(cut.colId);
+    banner = '📚 New for your collection: “' + cut.title + '” (' + (c ? c.name : '') + ')' + (cut.award ? ' — 🎉 COLLECTION COMPLETE! +' + cut.award + ' ✦' : '');
+  }
+  renderCollections(cut ? cut.title : null, banner);
+  if (cut && cut.award) { const b = $('colBanner'); if (b && b.classList) { b.classList.remove('awardpop'); void b.offsetWidth; b.classList.add('awardpop'); } }
+  $('colPanel').style.display = 'block'; colOpen = true;
+  if (cut) setTimeout(() => sfx('shard'), 560);   // a shimmer lands as the tile bursts into colour
+  if (cut) {   // Roy (2026-10-17): the album is long — glide to the book just bought
+    const grid = $('colGrid');
+    const tile = grid && grid.querySelector ? grid.querySelector('.justgot') : null;
+    if (tile && tile.scrollIntoView) setTimeout(() => { try { tile.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }, 60);
+  }
+}
+
 function rnd(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
 function rf(a, b) { return a + Math.random() * (b - a); }
 
@@ -251,9 +509,9 @@ let introStep = -1, introCoins = 9999, coinAnim = null, landlord = null, storySe
 let coinParticles = [], lastCoinBucket = 99, coinSpawnT = 0, coinHold = 0;
 function startIntro() {
   introStep = 0; introCoins = 9999; coinAnim = null;
-  landlord = { id: 999, x: 532, y: 388, leaving: false, state: 'haggle', kind: 'seller',
+  landlord = { id: 999, x: 532, y: 356, leaving: false, state: 'haggle', kind: 'seller',
                look: { skin: '#c68863', hair: '#26221f', hairStyle: 1, coat: '#34303c' } };
-  player.x = 446; player.y = 388; player.target = null;
+  player.x = 446; player.y = 356; player.target = null;
   showIntroLine();
   $('introBar').style.display = 'block';
 }
@@ -312,39 +570,142 @@ function updateIntro(dt) {
   if (landlord && landlord.leaving) {
     if (moveToward(landlord, DOOR.x, DOOR.y + 24, 175 * SPEED_MULT, dt)) landlord = null;
   }
+  if (visitor && visitor.leaving) {
+    if (moveToward(visitor, DOOR.x, DOOR.y + 24, 175 * SPEED_MULT, dt)) visitor = null;
+  }
   if (introStep >= 0) refreshHUD();
   updateEnding(dt);
 }
 
 function reset() {
   coins = 200;
-  shelfStock = { green: [], purple: [] };
-  // Starting stock is priced flat: every opening book sells for 25, so the
-  // run always opens at 200 coins + 12 x 25 = 500 net worth.
-  for (let i = 0; i < 6; i++) {
-    const g = makeBook('green', false); g.sellPrice = 25; g.cost = 25; shelfStock.green.push(g);
-    const p = makeBook('purple', false); p.sellPrice = 25; p.cost = 25; shelfStock.purple.push(p);
+  // The SHELVES are kept across runs (Roy, 2026-10-16): the new run restores
+  // the case layout the shop ended with — extra cases and genre cases alike.
+  // Other upgrades are NOT kept; they are re-bought each run as before.
+  // Kept genre cases count as owned (their genre is in play, card shows
+  // Owned) and the extra-shelf count is derived from the layout.
+  upgrades = freshUpgrades();
+  casePlan = keptCasePlan && keptCasePlan.length ? keptCasePlan.slice() : ['green', 'purple'];
+  for (const g of new Set(casePlan)) if (g !== 'green' && g !== 'purple') upgrades[g] = true;
+  if (inheritCat && keptCats) { upgrades.cat = !!keptCats.cat; upgrades.cat2 = !!keptCats.cat2 && upgrades.cat; }   // the cat changes hands only when a run actually ends (Roy, 2026-10-17)
+  inheritCat = false;
+  if (keptCap >= 9) upgrades.bookcase = true;   // the kept shelves keep their upgraded tier (Roy, 2026-10-17)
+  if (keptCap >= 12) upgrades.bookcase2 = true;
+  if (boughtEver.chair) upgrades.chair = true;   // the armchair is FURNITURE (Roy, 2026-10-18): bought once, it stays in the shop across runs like the shelves. (Checkers are staff, not furniture — never kept.)
+  upgrades.shelves = Math.max(0, casePlan.length - new Set(casePlan).size);
+  marketingActive = false;
+  applyUpgrades();
+  // The shelves start from the KEPT inventory (Roy, 2026-10-18): the books
+  // the last run left unsold are still there, values and all — only the
+  // EMPTY spaces are filled with flat-25 books (cost 25, sell 25).
+  shelfStock = {};
+  for (const g of activeGenres) {
+    const cap = capacityOf(g), kept = (keptStock && keptStock[g]) || [];
+    shelfStock[g] = [];
+    for (let i = 0; i < cap; i++) shelfStock[g].push(kept[i] ? Object.assign({}, kept[i]) : null);
+    for (let i = 0; i < cap; i++) if (!shelfStock[g][i]) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = 25; shelfStock[g][i] = b; }
   }
   carry = [];
   customers = [];
   dayT = 0; spawnT = 1.2; running = false; over = false; haggle = null;
   stats = freshStats();
-  day = 1; dayStartCoins = coins; reputation = 25;
-  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple).reduce((a, b) => a + (b.cost || 0), 0);
+  day = 1; dayStartCoins = coins;
+  reputation = 25;   // new run: reputation NEVER carries (Roy, 2026-10-17: on bankruptcy only furniture and the cat are carried forward — supersedes the 2026-10-16 carry-over rule)
+  startNetWorth = coins + Object.values(shelfStock).flat().filter(Boolean).reduce((a, b) => a + (b.cost || 0), 0);
   player = { x: 480, y: 385, speed: 235 * SPEED_MULT, target: null };
   document.getElementById('tallyPanel').style.display = 'none';
   document.getElementById('hagglePanel').style.display = 'none';
-  upgrades = { supplier: false, appraisal: false, bookcase: false }; applyUpgrades();
-  if (!storySeen) startIntro();
+  if (snapshotArmed) { snapshotArmed = false; saveRunSnapshot(); }   // New Game / Start Over: this fresh Day 1 becomes the Continue point
+  if (!storySeen && !titleOpen) startIntro();   // the title screen gates the intro (Roy, 2026-10-17)
+}
+
+// ---------- Cats, checker, chair (upgrade effects) ----------
+let cats = [];
+let checkerT = 0;
+const CHAIR = { x: 404, y: 306 };   // up and to the left of the rug's top-left corner (Roy, 2026-10-18; the rug spans 402..558 x 346..404)
+const CAT_RADIUS = 120;
+const CASHIER1 = { id: 990, x: 824, y: 444, kind: 'seller', state: 'leaveHappy', book: null, patience: 100, maxPatience: 100, look: { skin: '#c68850', hair: '#26221f', hairStyle: 2, coat: '#3f5a46', flip: false } };
+const CASHIER2 = { id: 991, x: 754, y: 444, kind: 'seller', state: 'leaveHappy', book: null, patience: 100, maxPatience: 100, look: { skin: '#f2c894', hair: '#b5522a', hairStyle: 3, coat: '#42536c', flip: true } };
+function newCat(color) { return { x: rf(200, 760), y: rf(240, 420), tx: 480, ty: 330, nap: rf(0, 2), color }; }
+function resetCats() { cats = []; if (upgrades.cat) cats.push(newCat('#e8a34c')); if (upgrades.cat2) cats.push(newCat('#9aa0a8')); }
+function updateCats(dt) {
+  for (const cat of cats) {
+    if (cat.nap > 0) { cat.nap -= dt; continue; }
+    if (moveToward(cat, cat.tx, cat.ty, 55, dt)) { cat.nap = rf(1.5, 4.5); cat.tx = rf(70, 890); cat.ty = rf(190, 435); }
+  }
+}
+function inCatAura(c) { return cats.some(cat => Math.hypot(c.x - cat.x, c.y - cat.y) < CAT_RADIUS); }
+function drainPatience(c, rate, dt) {
+  if (cats.length && inCatAura(c)) { c.patience = Math.min(c.maxPatience || 100, c.patience + 6 * dt); return; }
+  c.patience -= rate * dt;
+}
+function runChecker(dt) {
+  if (!upgrades.checker || !running || over) return;
+  checkerT -= dt;
+  if (checkerT <= 0) { checkerT = upgrades.checker2 ? 2 : 4; const b = frontBuyer(); if (b && b.book) sellToBuyer(b); }
+}
+
+// ---------- Meta progression (persists across runs) ----------
+const SAVE_KEY = 'bookstoreSim.v1';
+const RUN_KEY = 'bookstoreSim.run';   // morning snapshot of the current run, for the title screen's Continue (Roy, 2026-10-17)
+let snapshotArmed = false;            // armed by New Game / Start Over so their reset() snapshots the fresh Day 1 (the load-time reset must NOT overwrite a saved run)
+let shards = 0;
+let unlocked = {};      // upgrade id -> true (persistent)
+let boughtEver = {};    // upgrade id -> true (persistent; gates unlock prerequisites)
+let keptCasePlan = null;   // the shop's case layout (its shelves), kept across runs (Roy, 2026-10-16)
+let collected = {};        // collection title -> true (persistent meta-progression, Roy 2026-10-16)
+let collectionsDone = {};  // collection id -> true once its completion shards were awarded
+let keptCats = null;       // the cat(s) this run owns, saved at purchase. Inherited ONLY through the ending's Start Over (Roy, 2026-10-17): bankruptcy passes the cat to the next owner, but starting from scratch (page load / refresh) does not. Checkers are never kept.
+let keptStock = null;      // the shop's unsold inventory, captured when a run ends: the next run's shelves start from THESE books, with only the empty spaces filled by flat-25 stock (Roy, 2026-10-18)
+let bookSeq = 0;           // stable id per book instance, so a special pays its Star Shard once per BOOK, not once per sale (Codex review: Continue was farming the same book's shard)
+let shardPaid = {};        // book id -> true once its shard has been paid
+let inheritCat = false;    // armed by the Start Over button; consumed by reset()
+let keptCap = 6;           // the bookcase tier the shelves carry (6/9/12) — kept WITH the shelves across runs (Roy, 2026-10-17: on reset the cases "became not upgraded")
+function saveMeta() { try {
+    if (typeof upgrades !== 'undefined' && upgrades && (upgrades.bookcase || upgrades.bookcase2)) keptCap = Math.max(keptCap, upgrades.bookcase2 ? 12 : 9);   // the shelves remember their tier
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ shards, unlocked, boughtEver, casePlan, keptCats, keptCap, keptStock, bookSeq, shardPaid, collected, collectionsDone })); } catch (e) {} }
+function loadMeta() { try { const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (d) { shards = d.shards | 0; unlocked = d.unlocked || {}; boughtEver = d.boughtEver || {}; if (Array.isArray(d.casePlan) && d.casePlan.length) keptCasePlan = d.casePlan; if (d.keptCats) keptCats = d.keptCats; if (d.keptCap) keptCap = d.keptCap; if (d.keptStock) keptStock = d.keptStock; if (d.bookSeq) bookSeq = d.bookSeq; if (d.shardPaid) shardPaid = d.shardPaid; collected = d.collected || {}; collectionsDone = d.collectionsDone || {}; } } catch (e) {} }
+loadMeta();
+function saveRunSnapshot() {
+  try {
+    localStorage.setItem(RUN_KEY, JSON.stringify({
+      day, coins, reputation, upgrades, casePlan, shelfStock, carry,
+      marketingActive, stats, startNetWorth, dayStartCoins, px: player.x, py: player.y
+    }));
+  } catch (e) {}
+}
+function loadRunSnapshot() { try { const d = JSON.parse(localStorage.getItem(RUN_KEY) || 'null'); return d && d.day ? d : null; } catch (e) { return null; } }
+function resyncSnapshot() {   // after a Night Market purchase (Codex review, 2026-10-18): without this, a refresh + Continue rolled the purchase back — the case vanished while its cost came back
+  const sn = loadRunSnapshot(); if (!sn) return;
+  sn.coins = coins; sn.reputation = reputation; sn.casePlan = casePlan.slice();
+  sn.upgrades = JSON.parse(JSON.stringify(upgrades));
+  try { localStorage.setItem(RUN_KEY, JSON.stringify(sn)); } catch (e) {}
+}
+function restoreRun(snap) {
+  day = snap.day; coins = snap.coins; reputation = snap.reputation;
+  upgrades = snap.upgrades; casePlan = snap.casePlan.slice(); keptCasePlan = casePlan.slice();
+  keptCats = { cat: !!upgrades.cat, cat2: !!upgrades.cat2 };
+  if (boughtEver.chair) upgrades.chair = true;   // the armchair is furniture — it conveys with the shop (Roy, 2026-10-18)
+  shelfStock = snap.shelfStock; carry = snap.carry || [];
+  marketingActive = !!snap.marketingActive; marketingTonight = false;
+  stats = snap.stats || freshStats(); startNetWorth = snap.startNetWorth || 0; dayStartCoins = snap.dayStartCoins || coins;
+  customers = []; haggle = null; visitor = null; landlord = null; pendingRestock = null;
+  dayT = 0; spawnT = 1.2; over = false; introStep = -1; storySeen = true;
+  player.x = snap.px || 480; player.y = snap.py || 385; player.target = null; clickTarget = null;
+  applyUpgrades();
+  for (const id of ['tallyPanel', 'upgradesPanel', 'hagglePanel', 'restockPanel', 'rentPanel', 'winPanel', 'bankruptPanel', 'endPanel', 'colPanel']) $(id).style.display = 'none';
+  colOpen = false;
+  refreshHUD();
+  running = true;
 }
 
 // ---------- Customers ----------
 let cid = 0;
 function spawnCustomer() {
   const isBuyer = Math.random() < 0.6;   // sellers = 40% of arrivals (was 33%, +20%)
-  const genre = Math.random() < 0.5 ? 'green' : 'purple';
-  const c = { id: cid++, x: DOOR.x + rf(-14, 14), y: DOOR.y, genre,
-              patience: 100 * PATIENCE_MULT, state: 'enter', book: null, queueIdx: 0 };
+  const genre = activeGenres[Math.floor(Math.random() * activeGenres.length)];
+  const c = { id: cid++, x: DOOR.x + rf(-18, 18), y: H + 18, genre,
+              patience: 100 * PATIENCE_MULT, state: 'approach', book: null, queueIdx: 0 };   // appears outside, crosses the street/sidewalk, comes in through the door
   // --- sprite look (random per customer) ---
   const SKINS = ['#f2c894', '#e0ac69', '#c68850', '#8d5524', '#ffdbac'];
   const HAIRS = ['#2b2b2b', '#5a3a1a', '#8a6d3f', '#b5522a', '#d9d9d9', '#3a5a8c'];
@@ -357,10 +718,11 @@ function spawnCustomer() {
     coat: (isBuyer ? COATS_B : COATS_S)[rnd(0, 4)],
     flip: Math.random() < 0.5
   };
+  c.maxPatience = c.patience;
   if (isBuyer) { c.kind = 'buyer'; }
   else {
     c.kind = 'seller';
-    c.book = makeBook(genre, Math.random() < 0.12);
+    c.book = makeBook(genre, Math.random() < 0.12, true);
     c.floor = Math.max(3, Math.round(c.book.value * rf(0.55, 0.85)));
     c.ask = Math.round(c.book.value * rf(1.0, 1.35));   // may open ABOVE the book's true sell value
   }
@@ -372,7 +734,7 @@ function queuePos(counter, idx, fromTop) {
   return { x: counter.x + 40 + idx * 70, y: counter.y - 40 };
 }
 function shelfSpot(genre, idx) {
-  const s = SHELF[genre];
+  const s = firstCase(genre);
   return { x: s.x + 30 + (idx % 6) * 54, y: s.y + s.h + 34 };
 }
 
@@ -381,9 +743,8 @@ function nearStation() {
   const p = player;
   if (Math.abs(p.y - (BUY_COUNTER.y - 20)) < 66 && p.x > BUY_COUNTER.x - 30 && p.x < BUY_COUNTER.x + BUY_COUNTER.w + 30) return 'buy';
   if (Math.abs(p.y - (SELL_COUNTER.y - 20)) < 66 && p.x > SELL_COUNTER.x - 30 && p.x < SELL_COUNTER.x + SELL_COUNTER.w + 30) return 'sell';
-  for (const g of ['green', 'purple']) {
-    const s = SHELF[g];
-    if (p.y > s.y && p.y < s.y + s.h + 74 && p.x > s.x - 24 && p.x < s.x + s.w + 24) return 'shelf-' + g;
+  for (const cs of cases) {
+    if (p.y > cs.y && p.y < cs.y + cs.h + 74 && p.x > cs.x - 24 && p.x < cs.x + cs.w + 24) return 'shelf-' + cs.genre;
   }
   return null;
 }
@@ -400,54 +761,85 @@ function doInteract() {
     if (s) openHaggle(s);
   } else if (st === 'sell') {
     const b = frontBuyer();
-    if (b && b.book) {
-      coins += b.book.sellPrice; stats.sold++; stats.revenue += b.book.sellPrice; stats.costOfSold += (b.book.cost || 0);
-      flash('+' + b.book.sellPrice + ' 🪙');
-      b.book = null;              // sold books leave with the buyer — for good
-      b.state = 'leaveHappy';
-      sfx('sale');
-    }
+    if (b && b.book) sellToBuyer(b);
   } else if (st && st.startsWith('shelf-')) {
     const g = st.slice(6);
     const before = carry.length;
     let moved = 0;
-    carry = carry.filter(bk => { if (bk.genre === g && shelfStock[g].length < SHELF_CAP) { shelfStock[g].push(bk); moved++; return false; } return true; });
-    if (moved) flash('Stocked ' + GENRE_NAME[g]);
-    else if (before) flash(GENRE_NAME[g] + ' shelf is full!');
+    carry = carry.filter(bk => { if (bk.genre === g && shelveBook(g, bk)) { moved++; return false; } return true; });
+    if (moved) { sfx('thunk'); }   // no 'Stocked X' text anymore (Roy, 2026-10-17) — the thunk says it
+    else if (before && carry.some(bk => bk.genre === g)) flash(GENRE_NAME[g] + ' shelf is full!');
   }
+}
+
+function sellToBuyer(b) {
+  const bk = b.book; if (!bk) return;
+  coins += bk.sellPrice; stats.sold++; stats.revenue += bk.sellPrice; stats.costOfSold += (bk.cost || 0);
+  if (bk.id == null) bk.id = ++bookSeq;   // books from older saves get an id on first sale
+  if (bk.special && !shardPaid[bk.id]) { shardPaid[bk.id] = true; shards++; stats.shards++; saveMeta(); flash('+1 ✦ Star Shard!'); celebrateShards(1, b.x, b.y - 34); }
+  else flash('+' + bk.sellPrice + ' 🪙');
+  b.book = null;              // sold books leave with the buyer — for good
+  b.state = 'leaveHappy';
+  sfx('sale');
+  happyCustomer(b);
+  refreshHUD();
 }
 
 // ---------- Haggling ----------
 const $ = id => document.getElementById(id);
+function denyShake() { const b = $('actionBtn'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }
 function openHaggle(seller) {
-  haggle = { seller, offer: Math.max(1, Math.floor(seller.ask * 0.6)) };
+  // Roy (2026-10-16): no haggling with full arms — the deal could never
+  // complete and the panel trapped the player. Seller just keeps waiting.
+  if (carry.length >= CARRY_MAX) { denyShake(); flash('🧺 Your arms are full (max ' + CARRY_MAX + ') — stock something first!'); sfx('err'); return; }
+  haggle = { seller, offer: Math.max(1, Math.floor(seller.ask * 0.6)), refusals: 0 };
   seller.state = 'haggle';
-  $('haggleTitle').textContent = (seller.sleazy ? '🕶️ Sleazy Supplier — ' : 'Haggle — ') + GENRE_NAME[seller.book.genre] + (seller.book.special ? ' ✦ SPECIAL' : '');
-  $('haggleBook').innerHTML = 'Book: <span class="swatch" style="background:' + GENRE_COLOR[seller.book.genre] + '"></span>' +
-    GENRE_NAME[seller.book.genre] + (seller.book.special ? ' (special edition!)' : '') +
-    '';
+  $('haggleTitle').innerHTML = (seller.sleazy ? '🕶️ Sleazy Supplier — ' : 'Haggle — ') + '<span class="swatch" style="background:' + GENRE_COLOR[seller.book.genre] + '"></span> ' + GENRE_NAME[seller.book.genre] + (seller.book.special ? ' ✦ SPECIAL' : '');
+  const hb = $('haggleBook');   // no "Book: Non-fiction" line (Roy, 2026-10-18) — the genre lives in the title now; this line is only for collectible titles
+  if (seller.book.title) { hb.style.display = ''; hb.innerHTML = '📚 \u201C' + seller.book.title + '\u201D — from the \u201C' + colById(seller.book.col).name + '\u201D collection' + (collected[seller.book.title] ? ' (already in your collection)' : ' — <b style="color:#ffd94a;">NEW for your collection!</b>'); }
+  else { hb.style.display = 'none'; hb.innerHTML = ''; }
   const [lo, hi] = appraisalRange(seller.book);
   const slider = $('offerSlider');
   const max = Math.max(hi, seller.ask);            // bar runs 0 → top of range or the ask, whichever is higher
   slider.max = max; slider.value = haggle.offer;
-  const pLo = (lo / max * 100).toFixed(1), pHi = (hi / max * 100).toFixed(1);
-  slider.style.background = 'linear-gradient(90deg, #5a4326 0%, #5a4326 ' + pLo + '%, #35c4b5 ' + pLo + '%, #35c4b5 ' + pHi + '%, #5a4326 ' + pHi + '%, #5a4326 100%)';
+  const pLoN = lo / max * 100, pHiN = hi / max * 100, pLo = pLoN.toFixed(1), pHi = pHiN.toFixed(1);
+  const bandW = Math.max(0, pHiN - pLoN), bandPos = bandW >= 100 ? 0 : pLoN / (100 - bandW) * 100;
+  slider.style.background = 'repeating-linear-gradient(45deg, rgba(255,255,255,.16) 0 7px, rgba(255,255,255,0) 7px 14px), linear-gradient(90deg, #5a4326 0%, #5a4326 ' + pLo + '%, #35c4b5 ' + pLo + '%, #35c4b5 ' + pHi + '%, #5a4326 ' + pHi + '%, #5a4326 100%)';   // diagonal stripes on the appraisal band ONLY — the brown stays flat (Roy, 2026-10-18)
+  slider.style.backgroundSize = bandW.toFixed(1) + '% 100%, 100% 100%';
+  slider.style.backgroundPosition = bandPos.toFixed(1) + '% 0, 0 0';
+  slider.style.backgroundRepeat = 'no-repeat, no-repeat';
   $('haggleRange').textContent = lo + ' – ' + hi + ' coins';
   $('haggleAsk').textContent = seller.ask;
-  $('haggleMsg').textContent = seller.sleazy ? '“Price is retail, friend. Take it or leave it.”' : '';
-  syncOffer();
-  $('hagglePanel').style.display = 'block';
+  $('trueMark').style.display = 'none';   // the true-price marker only appears after a deal
+  $('haggleMsg').textContent = seller.sleazy ? '“Price is retail, friend. Take it or leave it.”' : (seller.refusals === 2 ? '⚠️ One more low offer and they walk!' : '');
+  $('hagglePanel').style.display = 'block';   // visible before placeAskTri measures the bar
+  syncOffer(); placeAskTri();
 }
+function barX(v) {   // pixel position of a value on the bar, in the SLIDER's own geometry:
+  // the thumb's centre travels 13.5px -> width-13.5px, so a raw % left the
+  // triangle visibly off the mark (Roy, 2026-10-18: "It's not aligned")
+  const sl = $('offerSlider'), mx = +sl.max || 1, w = sl.clientWidth || 0;
+  const p = Math.min(1, Math.max(0, v / mx));
+  return w > 0 ? (13.5 + p * (w - 27)) + 'px' : p * 100 + '%';
+}
+function placeAskTri() { if (haggle) $('askTri').style.left = barX(haggle.seller.ask); }   // the ▼ sits on the seller's asking price; it slides when a counter drops the ask
+addEventListener('resize', () => { if (haggle) placeAskTri(); });
 function syncOffer() {
   if (haggle) haggle.offer = +$('offerSlider').value;
   $('offerVal').textContent = haggle ? haggle.offer : 0;
   $('offerBtn').disabled = !haggle || haggle.offer > coins || haggle.offer < 1;
+  // (the offer itself is the slider thumb + the readout; the ▼ triangle marks the ASK — see placeAskTri)
 }
 $('offerSlider').addEventListener('input', syncOffer);
+function creditDeal(s, withCut) {   // collection credit for a completed purchase — exactly once, on whichever close ends the haggle (Codex review: a deal left open at day's end lost its credit)
+  const cut = noteCollectionPurchase(s.book);
+  if (cut) { if (withCut) pendingColCut = cut; sfx(cut.award ? 'fanfare' : 'tadah'); }
+}
 function closeHaggle(result) {
   const s = haggle.seller;
-  if (result === 'deal') { s.state = 'leaveHappy'; }
-  else if (result === 'decline') { if (haggle.dealt) s.state = 'leaveHappy'; else { s.state = 'leaveMad'; stats.turnedAway++; } }
+  if (result === 'deal') { s.state = 'leaveHappy'; creditDeal(s, true); happyCustomer(s); }
+  else if (result === 'dismiss') { s.state = 'toBuy'; }   // back out, no penalty: seller keeps waiting at the buy counter
+  else if (result === 'decline') { if (haggle.dealt) { s.state = 'leaveHappy'; creditDeal(s, false); } else { s.state = 'leaveMad'; stats.turnedAway++; } }
   haggle = null;
   $('hagglePanel').style.display = 'none';
 }
@@ -464,22 +856,38 @@ $('offerBtn').addEventListener('click', () => {
     haggle.dealt = true;
     showReveal(s.book, offer);
   } else {
+    s.refusals = (s.refusals || 0) + 1;   // Roy (2026-10-18): the THIRD refused offer and they walk out in anger. The strikes live on the SELLER (Codex review): Later + reopening must not reset them
+    if (s.refusals >= 3) {
+      flash('😤 Three low offers — they storm off!');
+      closeHaggle('storm'); s.state = 'leaveMad'; stats.walkWait++; repDown(s);
+      return;
+    }
     s.patience -= 10;
     s.ask = Math.max(s.floor + 3, Math.round((s.ask + offer) / 2));
-    $('haggleAsk').textContent = s.ask;
-    $('haggleMsg').textContent = offer >= s.floor * 0.85 ? 'Close… they counter at ' + s.ask + '.' : 'They shake their head. Counter: ' + s.ask + '.';
-    if (s.patience <= 0) { closeHaggle('storm'); s.state = 'leaveMad'; stats.walkWait++; repDown(); }
+    $('haggleAsk').textContent = s.ask; placeAskTri();
+    $('haggleMsg').textContent = (offer >= s.floor * 0.85 ? 'Close… they counter at ' + s.ask + '.' : 'They shake their head. Counter: ' + s.ask + '.') + (s.refusals === 2 ? ' ⚠️ One more low offer and they walk!' : '');
+    if (s.patience <= 0) { closeHaggle('storm'); s.state = 'leaveMad'; stats.walkWait++; repDown(s); }
   }
 });
-$('declineBtn').addEventListener('click', () => { if (haggle && !haggle.dealt) repDown(); if (haggle) closeHaggle('decline'); });
+$('declineBtn').addEventListener('click', () => { if (haggle && !haggle.dealt) repDown(haggle.seller); if (haggle) closeHaggle('decline'); });
+$('dismissBtn').addEventListener('click', () => { if (haggle && !haggle.dealt) closeHaggle('dismiss'); });
 
-// After a deal: the haggle panel greys out under an overlay card revealing the
-// book's ACTUAL sale value (count-up), with a Continue button to dismiss it.
+// After a deal: the overlay card reveals the book's ACTUAL sale value
+// (count-up) AND a gold marker on the bar shows where the true price sat
+// (Roy, 2026-10-18 — reversing his "surprise" call from earlier the same
+// afternoon: "show the true value. In fact show where it is on the bar").
+// A collectible also gets its icon on the card (Roy's wordless nod, kept).
 let revealTimer = null;
 function showReveal(book, paid) {
+  const tm = $('trueMark');
+  tm.style.left = barX(book.sellPrice);   // the ▲ sits at the true price, in the bar's own geometry
+  $('trueLbl').textContent = 'actually sells for ' + book.sellPrice;
+  tm.style.display = 'block';
   const margin = book.sellPrice - paid;
   const rev = $('haggleReveal');
-  rev.innerHTML = '<div class="card">🤝 Deal! You paid <b>' + paid + '</b> 🪙<br>The book actually sells for<br>' +
+  rev.innerHTML = '<div class="card">🤝 Deal! You paid <b>' + paid + '</b> 🪙<br>' +
+    (book.title ? '<div style="font-size:32px; line-height:1.15;">' + (book.icon || '📖') + '</div>' : '') +
+    'The book actually sells for<br>' +
     '<span class="big" id="revealVal">0</span> 🪙<br>' +
     '<span style="color:' + (margin >= 0 ? '#8fe08a' : '#e08a8a') + '; font-weight:bold;">' +
     (margin >= 0 ? 'Margin if it sells: +' + margin + ' 🎉' : 'You overpaid by ' + (-margin) + ' 😬') + '</span><br>' +
@@ -501,7 +909,9 @@ function closeReveal() {
   if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
   const rev = $('haggleReveal');
   rev.classList.remove('pop'); rev.innerHTML = '';
+  $('trueMark').style.display = 'none';
   if (haggle && haggle.dealt) { flash('Bought for ' + haggle.seller.book.cost + ' 🪙'); closeHaggle('deal'); }
+  if (pendingColCut) { const c = pendingColCut; pendingColCut = null; openCollections(c); }
 }
 
 // ---------- Music (generative, WebAudio — no audio files) ----------
@@ -516,6 +926,17 @@ function pluck(freq, t, dur, vol, type) {
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g); g.connect(Music.ctx.destination);
   o.start(t); o.stop(t + dur + 0.05);
+}
+// A knock on wood (Roy, 2026-10-18: the first version "didn't sound
+// woody"): the crack is a short NOISE burst through a bandpass — pure
+// tones ring too clean — over the hollow resonance of a door.
+function knockThump(t) {
+  if (!Music._noiseBuf) { const len = Math.floor(Music.ctx.sampleRate * 0.05); const buf = Music.ctx.createBuffer(1, len, Music.ctx.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; Music._noiseBuf = buf; }
+  const src = Music.ctx.createBufferSource(); src.buffer = Music._noiseBuf;
+  const bp = Music.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 850; bp.Q.value = 0.9;
+  const ng = Music.ctx.createGain(); ng.gain.setValueAtTime(0.24, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+  src.connect(bp); bp.connect(ng); ng.connect(Music.ctx.destination); src.start(t); src.stop(t + 0.06);
+  pluck(185.0, t, 0.09, 0.10, 'sine'); pluck(415.0, t, 0.06, 0.05, 'sine'); pluck(612.0, t, 0.045, 0.032, 'sine'); pluck(118.0, t, 0.11, 0.085, 'triangle');
 }
 function scheduleStep(step, t) {
   const chord = CHORDS[Math.floor(step / 8) % CHORDS.length], beat = step % 8;
@@ -549,6 +970,14 @@ function sfx(kind) {
   const t = Music.ctx.currentTime;
   if (kind === 'sale') { pluck(1318.5, t, 0.24, 0.02, 'triangle'); pluck(1568.0, t + 0.07, 0.3, 0.017, 'triangle'); }
   else if (kind === 'buy') { pluck(392.0, t, 0.22, 0.045); pluck(329.6, t + 0.06, 0.26, 0.04); }
+  else if (kind === 'err') { pluck(196.0, t, 0.16, 0.04, 'square'); pluck(174.6, t + 0.09, 0.22, 0.035, 'square'); }
+  else if (kind === 'shard') { pluck(1567.98, t, 0.14, 0.035, 'sine'); pluck(2093.0, t + 0.05, 0.16, 0.035, 'sine'); pluck(2637.0, t + 0.1, 0.24, 0.04, 'sine'); }   // a Star Shard lands (Roy: make it dramatic)
+  else if (kind === 'boop') { pluck(739.99, t, 0.1, 0.035, 'sine'); pluck(1174.66, t + 0.06, 0.16, 0.035, 'sine'); }   // happy rep bump (Roy)
+  else if (kind === 'bloop') { pluck(523.25, t, 0.12, 0.035, 'sine'); pluck(392.0, t + 0.07, 0.14, 0.035, 'sine'); pluck(261.63, t + 0.14, 0.22, 0.032, 'sine'); }   // customer leaves unhappy: descending bloop (Roy)
+  else if (kind === 'thunk') { pluck(131.0, t, 0.09, 0.085, 'sine'); pluck(87.0, t + 0.01, 0.13, 0.07, 'triangle'); }   // a book thunked onto the shelf (Roy)
+  else if (kind === 'knock') { knockThump(t); knockThump(t + 0.17); knockThump(t + 0.44); }   // knock-knock… knock: a visitor at the door (Roy, 2026-10-18)
+  else if (kind === 'tadah') { pluck(523.25, t, 0.16, 0.04); pluck(659.25, t + 0.07, 0.16, 0.04); pluck(783.99, t + 0.14, 0.2, 0.045); pluck(1046.5, t + 0.21, 0.34, 0.045); }   // collectible bought: ta-dah! (Roy)
+  else if (kind === 'fanfare') { pluck(523.25, t, 0.16, 0.04); pluck(659.25, t + 0.07, 0.16, 0.04); pluck(783.99, t + 0.14, 0.2, 0.045); pluck(1046.5, t + 0.21, 0.3, 0.05); pluck(1318.5, t + 0.3, 0.42, 0.04); pluck(1567.98, t + 0.38, 0.5, 0.035); }   // collection COMPLETE
 }
 $('musicBtn').addEventListener('click', () => {
   Music.on = !Music.on;
@@ -561,13 +990,16 @@ addEventListener('pointerdown', function unlock() { musicStart(); removeEventLis
 // ---------- Flash message ----------
 let flashTxt = '', flashT = 0;
 function flash(t) { flashTxt = t; flashT = 2.2; }
+function clearDayFX() {
+  flashT = 0; floaters = []; bursts = []; shardFlights = []; goldGlowT = 0; redGlowT = 0;
+  $('actionBtn').style.display = 'none';
+}
 
 // ---------- Update ----------
 const keys = {};
 addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   if (e.key.toLowerCase() === 'e' || e.key === ' ') { doInteract(); e.preventDefault(); }
-  if (e.key.toLowerCase() === 'r' && over) { startNextDay(); }
 });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
@@ -580,6 +1012,7 @@ canvas.addEventListener('pointerdown', e => {
   clickTarget = { x: (e.clientX - r.left) * (W / r.width), y: (e.clientY - r.top) * (H / r.height) };
 });
 $('actionBtn').addEventListener('click', doInteract);
+$('actionBtn').addEventListener('animationend', () => $('actionBtn').classList.remove('shake'));
 
 function moveToward(o, tx, ty, speed, dt) {
   const dx = tx - o.x, dy = ty - o.y, d = Math.hypot(dx, dy);
@@ -601,29 +1034,15 @@ function collide(p) {
   p.x = Math.max(20, Math.min(W - 20, p.x)); p.y = Math.max(20, Math.min(H - 14, p.y));
 }
 
-// The Sleazy Supplier (upgrade): once a day, the moment BOTH shelves are
-// completely empty, he slinks in as a seller whose price is fixed at retail —
-// floor = ask = the book's sell price. Desperation stock, zero margin.
-function spawnSupplier() {
-  supplierUsedToday = true;
-  const genre = Math.random() < 0.5 ? 'green' : 'purple';
-  const c = { id: cid++, x: DOOR.x + rf(-14, 14), y: DOOR.y, genre,
-              patience: 100 * PATIENCE_MULT, state: 'enter', book: null, queueIdx: 0, sleazy: true };
-  c.look = { skin: '#e0ac69', hair: '#1c1c22', hairStyle: 1, coat: '#7a3b8c', flip: false };
-  c.kind = 'seller';
-  c.book = makeBook(genre, false);
-  c.floor = c.book.value;
-  c.ask = c.book.value;
-  customers.push(c);
-  flash('🕶️ A sleazy supplier slinks in…');
-}
+// The Sleazy Supplier (upgrade) makes NO daytime visits (Roy, 2026-10-16:
+// "he should just replace the mysterious man") — owning him only swaps who
+// makes the nightly restock offer: him at 25/book instead of the Man's 30.
 
 function update(dt) {
-  if (!running || over) return;
+  if (!running || over || colOpen || titleOpen) return;
   dayT += dt;
   if (dayT >= DAY_LEN) { endDay(); return; }
   spawnT -= dt;
-  if (upgrades.supplier && !supplierUsedToday && shelfStock.green.length + shelfStock.purple.length === 0) spawnSupplier();
   if (spawnT <= 0) { spawnCustomer(); spawnT = Math.max(4.5, 8.5 - dayT * 0.012) * (25 / Math.max(reputation, 8)) * rf(0.8, 1.2) * (DAY_LEN / 210); }   // rep slowdown floored at ~3x; density scales with day length so a shorter day admits the same arrivals (Roy, 2026-10-16)
 
   // player movement
@@ -638,16 +1057,37 @@ function update(dt) {
 
   // customers
   const bq = buyQueue(), sq = sellQueue();
-  let shelfWaiters = { green: 0, purple: 0 };
+  const doorQueue = customers.filter(c => c.state === 'queue');
+  const shelfWaiters = {}; for (const g of activeGenres) shelfWaiters[g] = 0;
   for (const c of customers) {
-    if (c.state === 'leaveHappy' || c.state === 'leaveMad') { moveToward(c, DOOR.x, DOOR.y + 26, 150 * SPEED_MULT, dt); continue; }
+    if (c.state === 'approach') {   // outside → the door; in if there's room, else join the pavement queue
+      if (moveToward(c, DOOR.x, DOOR.y, 150 * SPEED_MULT, dt)) {
+        if (c.inside || (insideCount() < ROOM_MAX && !doorQueue.length)) { c.state = 'enter'; c.inside = true; }   // c.inside: a promoted queuer whose slot is already reserved; a queue, once formed, is strictly first-in-first-out (Codex review)
+        else c.state = 'queue';
+      }
+      continue;
+    }
+    if (c.state === 'queue') {   // waiting outside for a spot — patience still drains (Roy, 2026-10-18)
+      const qi = doorQueue.indexOf(c);
+      if (qi === 0 && insideCount() < ROOM_MAX) { c.state = 'approach'; c.inside = true; continue; }   // a spot opened: reserve it and head for the door
+      const slot = queueSlot(Math.max(0, qi));
+      moveToward(c, slot.x, slot.y, 125 * SPEED_MULT, dt);
+      c.patience -= 1.5 * dt;   // plain drain — no cat comfort through the wall
+      if (c.patience <= 0) { c.state = 'leaveMad'; c.out = true; c.outX = c.x; stats.walkWait++; repDown(c); }
+      continue;
+    }
+    if (c.state === 'leaveHappy' || c.state === 'leaveMad') {   // out through the door first, then away across the pavement
+      if (!c.out) { if (moveToward(c, DOOR.x, DOOR.y, 150 * SPEED_MULT, dt)) { c.out = true; c.inside = false; c.outX = DOOR.x + rf(-18, 18); } }   // crossing out frees a room slot
+      else if (moveToward(c, c.outX, H + 24, 150 * SPEED_MULT, dt)) c.gone = true;
+      continue;
+    }
     if (c.kind === 'seller') {
       if (c.state === 'enter') { c.state = 'toBuy'; }
       if (c.state === 'toBuy' || c.state === 'haggle') {
         const idx = bq.indexOf(c);
         const pos = queuePos(BUY_COUNTER, Math.max(0, idx), true);
         if (c.state === 'toBuy') moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
-        if (!(haggle && haggle.dealt && haggle.seller === c)) c.patience -= dt * (c.state === 'haggle' ? 2.0 : 1.5);
+        if (!(haggle && haggle.dealt && haggle.seller === c)) drainPatience(c, c.state === 'haggle' ? 2.0 : 1.5, dt);
         if (c.patience <= 0) {
           if (haggle && haggle.seller === c) closeHaggle('storm');
           c.state = 'leaveMad'; stats.walkWait++; repDown();
@@ -659,41 +1099,49 @@ function update(dt) {
         const pos = shelfSpot(c.genre, shelfWaiters[c.genre]++);
         const arrived = moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
         if (arrived) {
-          if (shelfStock[c.genre].length > 0) { c.book = shelfStock[c.genre].shift(); c.state = 'toSell'; }
+          if (stockCount(c.genre) > 0) { c.book = takeRandomBook(c.genre); c.state = 'toSell'; }
           else c.state = 'waitShelf';
         }
       } else if (c.state === 'waitShelf') {
-        const pos = shelfSpot(c.genre, shelfWaiters[c.genre]++);
+        if (upgrades.chair && !c.chairSeat && !customers.some(o => o !== c && o.chairSeat)) c.chairSeat = true;   // claim the Comfy Chair
+        const pos = c.chairSeat ? { x: CHAIR.x, y: CHAIR.y + 30 } : shelfSpot(c.genre, shelfWaiters[c.genre]++);
         moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
-        if (shelfStock[c.genre].length > 0) { c.book = shelfStock[c.genre].shift(); c.state = 'toSell'; }
-        else { c.patience -= dt * 3.2; if (c.patience <= 0) { c.state = 'leaveMad'; stats.walkStock++; repDown(); } }
+        if (stockCount(c.genre) > 0) { c.book = takeRandomBook(c.genre); c.chairSeat = false; c.state = 'toSell'; }
+        else { const seated = c.chairSeat && Math.hypot(c.x - pos.x, c.y - pos.y) < 12; drainPatience(c, seated ? 0.8 : 3.2, dt); if (c.patience <= 0) { c.state = 'leaveMad'; stats.walkStock++; repDown(c); } }
       } else if (c.state === 'toSell') {
         const idx = sq.indexOf(c);
         const pos = queuePos(SELL_COUNTER, Math.max(0, idx), true);
         moveToward(c, pos.x, pos.y, 125 * SPEED_MULT, dt);
-        c.patience -= dt * 1.5;
+        drainPatience(c, 1.5, dt);
         if (c.patience <= 0) { // leaves, book goes back on the shelf
-          shelfStock[c.genre].push(c.book); c.book = null; c.state = 'leaveMad'; stats.walkWait++; repDown();
+          if (shelveBook(c.genre, c.book)) { c.book = null; c.state = 'leaveMad'; stats.walkWait++; repDown(); }
+          else if (carry.length < CARRY_MAX) { carry.push(c.book); c.book = null; c.state = 'leaveMad'; stats.walkWait++; repDown(); }   // no empty slot: the book lands in the bookseller's arms (Roy, 2026-10-17)
+          else { stats.wasted++; stats.wastedValue += c.book.sellPrice; c.book = null; c.state = 'leaveMad'; stats.walkWait++; repDown(); }   // arms full too: the book is wasted
         }
       }
     }
   }
-  customers = customers.filter(c => !(c.y > H + 16 && (c.state === 'leaveHappy' || c.state === 'leaveMad')));
+  customers = customers.filter(c => !c.gone && !(c.y > H + 16 && (c.state === 'leaveHappy' || c.state === 'leaveMad')));
 
-  // hint + action button
+  updateCats(dt);
+  runChecker(dt);
+
+  // action button only — the status text line under the canvas is gone (Roy, 2026-10-17)
   const st = nearStation();
-  let hint = '', canAct = false;
-  if (st === 'buy') { const s = frontSeller(); hint = s ? 'Haggle with the seller' : 'Buy counter: no seller waiting'; canAct = !!s; }
-  else if (st === 'sell') { const b = frontBuyer(); hint = b ? 'Ring up the sale (' + b.book.sellPrice + ' 🪙)' : 'Sell counter: no buyer waiting'; canAct = !!b; }
-  else if (st && st.startsWith('shelf-')) {
-    const g = st.slice(6);
-    canAct = carry.some(b => b.genre === g);
-    hint = canAct ? 'Stock your ' + GENRE_NAME[g] + ' books' : GENRE_NAME[g] + ' shelf (' + shelfStock[g].length + '/' + SHELF_CAP + ')';
-  }
-  $('hint').innerHTML = hint.split('🪙').join(COIN);
+  let canAct = false;
+  if (st === 'buy') { canAct = !!frontSeller(); }
+  else if (st === 'sell') { canAct = !!frontBuyer(); }
+  else if (st && st.startsWith('shelf-')) { canAct = carry.some(b => b.genre === st.slice(6)); }
   $('actionBtn').style.display = canAct ? 'block' : 'none';
   $('actionBtn').textContent = st === 'buy' ? 'Haggle' : st === 'sell' ? 'Ring up' : 'Stock books';
   if (flashT > 0) flashT -= dt;
+  for (const f of floaters) f.t += dt; floaters = floaters.filter(f => f.t < 1.1);
+  for (const fl of shardFlights) { fl.t += dt / 0.8; if (fl.t >= 1 && !fl.popped) { fl.popped = true; hudPop('shardBox', 'hudpop'); } }
+  shardFlights = shardFlights.filter(fl => fl.t < 1.15);
+  for (const b of bursts) for (const p of b.ps) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 130 * dt; }
+  bursts = bursts.filter(b => b.ps[0].t < 0.7);
+  if (goldGlowT > 0) goldGlowT -= dt;
+  if (redGlowT > 0) redGlowT -= dt;
 
   refreshHUD();
 }
@@ -701,6 +1149,7 @@ function update(dt) {
 function refreshHUD() {
   $('dayNum').textContent = 'Day ' + day;
   $('coins').textContent = (introStep >= 0 && !storySeen) ? Math.round(introCoins).toLocaleString('en-US') : coins;
+  $('shards').textContent = shards;
   const remain = Math.max(0, DAY_LEN - dayT), mm = Math.floor(remain / 60), ss = Math.floor(remain % 60);
   $('clock').textContent = mm + ':' + String(ss).padStart(2, '0');
   $('rep').textContent = reputation;
@@ -711,26 +1160,32 @@ function refreshHUD() {
 // shop owns goes back on a shelf — books in your arms and books buyers are
 // still holding. Shelf first, then your arms; whatever fits nowhere is wasted.
 function applyUpgrades() {
-  SHELF_CAP = upgrades.bookcase ? 9 : 6;
-  SHELF_TIERS = upgrades.bookcase ? 3 : 2;
-  for (const g of ['green', 'purple']) SHELF[g].h = upgrades.bookcase ? 174 : 116;
-  supplierUsedToday = false;
+  SHELF_CAP = caseCap();
+  SHELF_TIERS = (upgrades.bookcase || upgrades.bookcase2) ? 3 : 2;
+  activeGenres = ALL_GENRES.filter(g => g === 'green' || g === 'purple' || upgrades[g]);
+  buildCases();
+  if (shelfStock) normalizeSlots();   // AFTER buildCases: capacityOf reads the built cases, so slot arrays size to the new layout (incl. a case bought last night)
+  if (player) player.speed = 235 * SPEED_MULT * (upgrades.speed2 ? 1.4 : upgrades.speed ? 1.2 : 1);
+  resetCats();
+  checkerT = 0;
   marketingTonight = false;
 }
 function startNextDay() {
+  if ($('upgradesPanel').style.display === 'none') return;   // the ONLY way onward is the Night Market's button — a stray keypress must never skip wages/rent/bankruptcy (Codex review, 2026-10-18)
   day++;
+  marketingActive = marketingTonight;   // capture before applyUpgrades clears it
   applyUpgrades();
-  reputation++;                        // +1 every day, regardless (Roy)
   customers = []; dayT = 0; spawnT = 1.2; over = false; haggle = null;
   stats = freshStats();
   dayStartCoins = coins;
-  startNetWorth = coins + shelfStock.green.concat(shelfStock.purple, carry).reduce((a, b) => a + (b.cost || 0), 0);
+  startNetWorth = coins + Object.values(shelfStock).flat().filter(Boolean).concat(carry).reduce((a, b) => a + (b.cost || 0), 0);
   player.x = 480; player.y = 385; player.target = null;
   $('tallyPanel').style.display = 'none';
   $('upgradesPanel').style.display = 'none';
   $('hagglePanel').style.display = 'none';
   running = true; musicStart();
   refreshHUD();
+  saveRunSnapshot();   // the new day begins — this is the morning Continue returns to
 }
 
 function playJingle() {
@@ -753,65 +1208,113 @@ function showClosing(next) {
 }
 function endDay() {
   over = true; running = false;
+  clearDayFX();   // no frozen flash text, floaters or stray Interact button in the night screens (Roy, 2026-10-17)
   refreshHUD();   // settle the HUD NOW — a last-second sale/purchase otherwise leaves it stale vs. the rent check
+  if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }   // a pending reveal must not fire into the night screens (Codex review)
+  $('haggleReveal').classList.remove('pop'); $('haggleReveal').innerHTML = '';
   if (haggle) closeHaggle('decline');
   $('hagglePanel').style.display = 'none';
+  // Roy (2026-10-17), final order: arm books restock first; books left at
+  // the checkout counter go LAST, but each still shelves if its genre has
+  // space, otherwise it takes an arm slot freed by the arm books shelving.
   const pool = carry.slice();
-  for (const c of customers) if (c.kind === 'buyer' && c.book && (c.state === 'toSell' || c.state === 'queueSell')) pool.push(c.book);
+  // Possession, not state (Roy, 2026-10-17 — he kept feeling books were
+  // lost at closing): ANY book in a buyer's hands at close is shop stock
+  // and comes back, whatever the customer happened to be doing.
+  for (const c of customers) if (c.kind === 'buyer' && c.book) { pool.push(c.book); stats.sweptBack++; }
   carry = []; customers = [];
   for (const b of pool) {
-    if (shelfStock[b.genre].length < SHELF_CAP) shelfStock[b.genre].push(b);
+    if (shelveBook(b.genre, b)) { /* random empty slot */ }
     else if (carry.length < CARRY_MAX) carry.push(b);
     else { stats.wasted++; stats.wastedValue += b.sellPrice; }
   }
+  showClosing(afterClosing);
+}
+// The night's order (Roy, 2026-10-18): after the closing pause, the
+// Checker's wage comes BEFORE the supplier's knock — then the restock,
+// then the rent. Can't pay the wage: bankrupt.
+function afterClosing() { if (upgrades.checker) showWage(); else restockStep(); }
+function checkerWages() { return (upgrades.checker ? 50 : 0) + (upgrades.checker2 ? 50 : 0); }   // 50 per cashier, per day
+function showWage() {
+  const due = checkerWages(), n = (upgrades.checker ? 1 : 0) + (upgrades.checker2 ? 1 : 0), canPay = coins >= due;
+  $('wageBody').innerHTML = '🧾 <b>' + (n > 1 ? 'Your checkers hold out their hands' : 'Your checker holds out a hand') + '.</b> “Wages for the day: <b>' + due + '</b> ' + COIN + '.”';
+  $('wagePay').textContent = canPay ? 'Pay ' + due : 'You can’t afford ' + due;
+  $('wagePay').disabled = !canPay;
+  $('wageFace').style.display = canPay ? 'none' : '';
+  $('wagePanel').style.display = 'block';
+}
+function restockStep() {
   // The Mysterious Man's restock offer: if even ONE slot is empty at close,
   // he offers to fill every empty slot at 30 a book — books that sell for 25.
   // He appears BEFORE the tally so the numbers include the deal.
-  const shelfTotal = shelfStock.green.length + shelfStock.purple.length;
-  const emptySlots = (SHELF_CAP * 2) - shelfTotal;
+  const shelfTotal = activeGenres.reduce((a, g) => a + stockCount(g), 0);
+  const emptySlots = activeGenres.reduce((a, g) => a + capacityOf(g), 0) - shelfTotal;
   if (emptySlots > 0) {   // the offer ALWAYS comes if even one slot is empty (Roy)
     // Owning the Sleazy Supplier SWAPS your supplier: his nightly restock is
     // at retail (25/book) instead of the Mysterious Man's 30/book trap.
-    const bySupplier = upgrades.supplier;
-    const perBook = bySupplier ? 25 : 30;
+    const bySupplier = upgrades.supplier || upgrades.reliable;
+    const perBook = upgrades.reliable ? 20 : bySupplier ? 25 : 30;   // Reliable Supplier restocks at 20 (Roy, 2026-10-18)
     pendingRestock = { empty: emptySlots, total: emptySlots * perBook, perBook, bySupplier };
-    stats.restockBy = bySupplier ? 'supplier' : 'man';
+    stats.restockBy = upgrades.reliable ? 'reliable' : bySupplier ? 'supplier' : 'man';
     const spaces = emptySlots + ' empty space' + (emptySlots === 1 ? '' : 's');
     $('restockBody').innerHTML = bySupplier
-      ? '<b>SLEAZY SUPPLIER:</b> “Psst, friend. Gaps on the shelves — <b>' + spaces + '</b>. I fill every one tonight, at retail: <b>25</b> ' + COIN + ' a book. That’s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”'
-      : '<b>MYSTERIOUS MAN:</b> “Psst. Shelves are looking bare — <b>' + spaces + '</b>. I’ll fill every one tonight: <b>30</b> ' + COIN + ' a book, and they sell for <b>25</b>. That’s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”';
+      ? '<b>' + (upgrades.reliable ? 'RELIABLE SUPPLIER' : 'SLEAZY SUPPLIER') + ':</b> “Psst, friend. Gaps on the shelves — <b>' + spaces + '</b>. I fill every one tonight: <b>' + pendingRestock.perBook + '</b> ' + COIN + ' a book, and they sell for <b>25</b>. That’s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”'
+      : '<b>MYSTERIOUS MAN:</b> “Psst. Shelves are looking bare — <b>' + spaces + '</b>. I’ll fill every one tonight: <b>30</b> ' + COIN + ' a book. That’s <b>' + pendingRestock.total + '</b> ' + COIN + ' all in. Deal?”';   // Roy: he names only your cost, never the books' sell price — the trap stays hidden
     $('restockYes').textContent = coins >= pendingRestock.total ? 'Deal — pay ' + pendingRestock.total : 'You can\'t afford ' + pendingRestock.total;
     $('restockYes').disabled = coins < pendingRestock.total;
-    showClosing(() => { $('restockPanel').style.display = 'block'; });
+    sfx('knock'); stageVisitor(bySupplier ? 'sleazy' : 'man'); $('restockPanel').style.display = 'block';
     return;
   }
-  showClosing(proceedAfterRestock);
+  proceedAfterRestock();
 }
 
 let pendingRestock = null;
 $('restockYes').addEventListener('click', () => {
   if (!pendingRestock) return;
+  releaseVisitor();
   coins -= pendingRestock.total; refreshHUD();
   stats.restocked = pendingRestock.empty; stats.restockCost = pendingRestock.total;
-  for (const g of ['green', 'purple'])
-    while (shelfStock[g].length < SHELF_CAP) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = pendingRestock.perBook; shelfStock[g].push(b); }
+  for (const g of activeGenres)
+    while (stockCount(g) < capacityOf(g)) { const b = makeBook(g, false); b.sellPrice = 25; b.cost = pendingRestock.perBook; if (!shelveBook(g, b)) break; }
   pendingRestock = null;
   $('restockPanel').style.display = 'none';
   proceedAfterRestock();
 });
+$('wagePay').addEventListener('click', () => {
+  const due = checkerWages();
+  coins -= due; stats.wagesPaid = due; refreshHUD();
+  $('wagePanel').style.display = 'none';
+  restockStep();
+});
+$('wageFace').addEventListener('click', () => { $('wagePanel').style.display = 'none'; showBankrupt('wage'); });
 $('restockNo').addEventListener('click', () => {
+  releaseVisitor();
   stats.restockDeclined = pendingRestock ? pendingRestock.empty : 0;
   pendingRestock = null;
   $('restockPanel').style.display = 'none';
   proceedAfterRestock();
 });
 
+// Roy (2026-10-17): when the Man (or the Supplier) knocks at night, the
+// conversation happens IN the shop — the player and the visitor stand on
+// the carpet while their dialog bar is up; the visitor leaves when it ends.
+let visitor = null;
+function stageVisitor(who) {
+  player.x = 446; player.y = 368; player.target = null; clickTarget = null;
+  visitor = { id: 997, x: 514, y: 368, state: 'haggle', kind: 'seller', genre: 'green', who, leaving: false,
+    look: who === 'man' ? { skin: '#c68863', hair: '#26221f', hairStyle: 1, coat: '#34303c' }
+                        : { skin: '#e8b48c', hair: '#2b2b2b', hairStyle: 0, coat: '#7a3a8c' } };
+}
+function releaseVisitor() { if (visitor) visitor.leaving = true; }
 function proceedAfterRestock() {
-  if (day % 3 === 0) showRent(); else composeTally();
+  if (day % 3 === 0) { stageVisitor('man'); showRent(); } else composeTally();
 }
 
 // ---------- Week's end: rent, and what happens if you can't pay ----------
 let confetti = [], endingStep = -1, endBuyer = null, playerLeaving = false;
+// Roy (2026-10-17): the ending gets a little transformation animation —
+// the Buyer becomes the bookseller, and YOU become the Mysterious Man.
+let transformT = -1, transformSwapped = false, playerAsMan = false, buyerAsBookseller = false;
 let coinFrom = null, coinTo = null, coinLabel = 'Y O U R   C O I N S';
 const ENDING_LINES = [
   { who: 'YOU', line: 'Psst. Wanna buy a bookstore?' },
@@ -821,6 +1324,7 @@ const ENDING_LINES = [
 ];
 const rentDue = () => 200 + 100 * (day / 3);   // 300 in week 1, +100 each week (was 500 base; Roy, 2026-10-16)
 function showRent() {
+  sfx('knock');   // the Man knocks before he asks for rent (Roy, 2026-10-18)
   const rent = rentDue();
   $('rentBody').innerHTML = '<b>MYSTERIOUS MAN:</b> “End of the week. Rent\'s due: <b>' + rent + '</b> ' + COIN + '. Cash.”<br><br>You have <b>' + coins + '</b> ' + COIN + ' in the till.';
   const canPay = coins >= rent;
@@ -835,10 +1339,13 @@ $('rentPay').addEventListener('click', () => {
   $('winPanel').style.display = 'block';
   spawnConfetti();
 });
-$('winOk').addEventListener('click', () => { $('winPanel').style.display = 'none'; composeTally(); });
-$('rentFace').addEventListener('click', () => { $('rentPanel').style.display = 'none'; showBankrupt('rent'); });
+$('winOk').addEventListener('click', () => { $('winPanel').style.display = 'none'; releaseVisitor(); composeTally(); });
+$('rentFace').addEventListener('click', () => { $('rentPanel').style.display = 'none'; releaseVisitor(); showBankrupt('rent'); });
 function showBankrupt(kind) {
-  if (kind === 'rep') {
+  if (kind === 'wage') {
+    $('bankruptTitle').textContent = '🧾 Unpaid wages';
+    $('bankruptBody').innerHTML = "Your checker hangs up his apron and walks — and word gets around: a shop that doesn't pay its people doesn't stay open. The deed goes back to the Mysterious Man… unless <i>you</i> can find a buyer first.";
+  } else if (kind === 'rep') {
     $('bankruptTitle').textContent = '🪦 Reputation: zero';
     $('bankruptBody').innerHTML = 'Word travels fast in this town. No sellers, no buyers — nobody crosses your threshold anymore. The shop is finished… unless <i>you</i> can find a buyer first.';
   } else {
@@ -846,11 +1353,21 @@ function showBankrupt(kind) {
     $('bankruptBody').innerHTML = "You can't make the rent. The deed goes back to the Mysterious Man… unless. Unless <i>you</i> can find a buyer first.";
   }
   $('bankruptPanel').style.display = 'block';
+  $('startOverBtn').textContent = kind === 'rep' ? 'Start over' : 'Continue';   // on bankruptcy the ending's button reads "Continue", not "Start over" (Roy, 2026-10-18)
 }
 $('bankruptOk').addEventListener('click', () => { $('bankruptPanel').style.display = 'none'; startEnding(); });
 $('startOverBtn').addEventListener('click', () => {
+  inheritCat = true;   // the run ended — the next owner inherits the cat (Roy, 2026-10-17)
+  // every unsold book conveys (Codex review, 2026-10-18): arms books and
+  // books in buyers' hands are shelved first if there's room — the rep
+  // ending strikes mid-day, before any closing sweep could gather them
+  for (const b of carry.slice()) if (shelveBook(b.genre, b)) carry.splice(carry.indexOf(b), 1);
+  for (const c of customers) if (c.kind === 'buyer' && c.book && shelveBook(c.book.genre, c.book)) c.book = null;
+  keptStock = JSON.parse(JSON.stringify(shelfStock));   // and the unsold inventory conveys with the shop (Roy, 2026-10-18)
+  saveMeta();
+  snapshotArmed = true;
   $('endPanel').style.display = 'none';
-  coinFrom = null; coinTo = null; coinLabel = 'Y O U R   C O I N S'; playerLeaving = false;
+  coinFrom = null; coinTo = null; coinLabel = 'Y O U R   C O I N S'; playerLeaving = false; transformT = -1; transformSwapped = false; playerAsMan = false; buyerAsBookseller = false;
   reset(); running = true; musicStart();
 });
 function spawnConfetti() {
@@ -858,11 +1375,14 @@ function spawnConfetti() {
   for (let i = 0; i < 160; i++) confetti.push({ x: rf(0, W), y: rf(-H * 0.6, -10), vx: rf(-14, 14), vy: rf(45, 120), rot: rf(0, 6.3), vr: rf(-4, 4), w: rf(5, 9), h: rf(8, 14), color: colors[i % colors.length], seed: rf(0, 9), life: rf(3.2, 4.6) });
 }
 function startEnding() {
+  visitor = null;
+  clearDayFX();
   endingStep = 0; playerLeaving = false;
-  endBuyer = { id: 998, x: 446, y: 388, state: 'haggle', kind: 'buyer', genre: 'green',
+  transformT = -1; transformSwapped = false; playerAsMan = false; buyerAsBookseller = false;
+  endBuyer = { id: 998, x: 446, y: 356, state: 'haggle', kind: 'buyer', genre: 'green',
                look: { skin: '#e8b48c', hair: '#6b4a2f', hairStyle: 0, coat: '#b0503c' } };
-  player.x = 532; player.y = 388; player.target = null;
-  coinFrom = endBuyer; coinTo = { x: 532, y: 354 }; coinLabel = 'H I S   C O I N S';
+  player.x = 532; player.y = 356; player.target = null;
+  coinFrom = endBuyer; coinTo = { x: 532, y: 322 }; coinLabel = 'H I S   C O I N S';
   showEndingLine();
   $('introBar').style.display = 'block';
 }
@@ -872,9 +1392,10 @@ function showEndingLine() {
 }
 function advanceEnding() {
   if (endingStep < 0) return;
+  if (transformT >= 0) return;   // mid-transformation — let it play
   if (endingStep === 2 && coinAnim) { coinAnim = null; introCoins = 200; startCoinHold(); return; }
   if (endingStep === 1) { coinAnim = { t: 0 }; introCoins = 9999; }
-  if (endingStep === 2) playerLeaving = true;
+  if (endingStep === 2 && !transformSwapped) { transformT = 0; return; }   // "Deal." — the transformation beat
   endingStep++;
   if (endingStep >= ENDING_LINES.length) {
     endingStep = -1; endBuyer = null; coinFrom = null; coinTo = null;
@@ -885,13 +1406,18 @@ function advanceEnding() {
   showEndingLine();
 }
 function updateEnding(dt) {
+  if (transformT >= 0) {
+    transformT += dt;
+    if (transformT >= 0.55 && !transformSwapped) { transformSwapped = true; playerAsMan = true; buyerAsBookseller = true; sfx('tadah'); }
+    if (transformT >= 1.25) { transformT = -1; playerLeaving = true; endingStep = 3; showEndingLine(); }
+  }
   if (playerLeaving) { if (moveToward(player, DOOR.x, DOOR.y + 24, 175 * SPEED_MULT, dt)) playerLeaving = false; }
   confetti = confetti.filter(p => { p.life -= dt; p.vy = Math.min(150, p.vy + 60 * dt); p.y += p.vy * dt; p.x += p.vx * dt + Math.sin(p.y * 0.04 + p.seed) * 0.7; p.rot += p.vr * dt; return p.life > 0 && p.y < H + 24; });
 }
 
 function composeTally() {
   const profit = coins - dayStartCoins;
-  const leftBooks = shelfStock.green.concat(shelfStock.purple, carry);
+  const leftBooks = Object.values(shelfStock).flat().filter(Boolean).concat(carry);
   const invValue = leftBooks.reduce((a, b) => a + (b.cost || 0), 0);   // inventory at cost → Δ net worth = profit
   const invBoughtCost = leftBooks.reduce((a, b) => a + (b.cost || 0), 0);
   const netWorth = coins + invValue, nwDelta = netWorth - startNetWorth;
@@ -899,14 +1425,18 @@ function composeTally() {
     '🌙 <b>Day ' + day + ' complete.</b><br><br>' +
     'Books sold: <b>' + stats.sold + '</b> rang up <b>' + stats.revenue + ' 🪙</b><br>' +
     'Books bought: <b>' + stats.bought + '</b> for <b>' + stats.spent + ' 🪙</b> total<br>' +
-    (stats.restocked ? (stats.restockBy === 'supplier' ? '🕶️ The Sleazy Supplier' : '🧥 The Mysterious Man') + ' restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
-    (stats.restockDeclined ? 'You turned down the restock from ' + (stats.restockBy === 'supplier' ? 'the Sleazy Supplier' : 'the Mysterious Man') + ' (' + stats.restockDeclined + ' empty space' + (stats.restockDeclined === 1 ? '' : 's') + ' left bare)<br>' : '') +
+    (stats.restocked ? (stats.restockBy === 'reliable' ? '🤝 The Reliable Supplier' : stats.restockBy === 'supplier' ? '🕶️ The Sleazy Supplier' : '🧥 The Mysterious Man') + ' restocked <b>' + stats.restocked + '</b> books for <b>' + stats.restockCost + ' 🪙</b> (they sell for 25 each)<br>' : '') +
+    (stats.restockDeclined ? 'You turned down the restock from ' + (stats.restockBy === 'reliable' ? 'the Reliable Supplier' : stats.restockBy === 'supplier' ? 'the Sleazy Supplier' : 'the Mysterious Man') + ' (' + stats.restockDeclined + ' empty space' + (stats.restockDeclined === 1 ? '' : 's') + ' left bare)<br>' : '') +
+    (stats.wagesPaid ? '🧾 Checker wages: <b>−' + stats.wagesPaid + ' 🪙</b><br>' : '') +
     (stats.rentPaid ? '🧥 Rent to the Mysterious Man: <b>−' + stats.rentPaid + ' 🪙</b> cash<br>' : '') +
     'Wasted at closing (no shelf or arm space): <b>' + stats.wasted + '</b> books' + (stats.wasted ? ' worth <b>' + stats.wastedValue + ' 🪙</b> at sale value' : '') + '<br>' +
+    'Taken back from customers at closing: <b>' + stats.sweptBack + '</b> books<br>' +
+    'In your arms overnight: <b>' + carry.length + '</b> books<br>' +
     'Walkouts — waited too long: <b>' + stats.walkWait + '</b><br>' +
     'Walkouts — not in stock: <b>' + stats.walkStock + '</b><br>' +
     'Sellers turned away: <b>' + stats.turnedAway + '</b><br><br>' +
     '📚 Stock left: <b>' + leftBooks.length + '</b> books worth <b>' + invValue + ' 🪙</b> at cost<br>' +
+    (stats.shards ? '✦ Star Shards earned: <b>' + stats.shards + '</b> (balance: ' + shards + ')<br>' : '') +
     '🪙 Coins: <b>' + coins + '</b><br>' +
     '💰 <b>Net worth: ' + netWorth + ' 🪙</b> (opened at ' + startNetWorth + ') — change: <b style="color:' + (nwDelta >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (nwDelta >= 0 ? '+' : '') + nwDelta + ' 🪙</b><br>' +
     'Cash-only day result: <b style="color:' + (profit >= 0 ? '#8fe08a' : '#e08a8a') + '">' + (profit >= 0 ? '+' : '') + profit + ' 🪙</b>';
@@ -917,43 +1447,148 @@ function composeTally() {
 $('restartBtn').addEventListener('click', () => {
   $('tallyPanel').style.display = 'none';
   renderUpgrades();
-  $('upgradesPanel').style.display = 'block';
+  $('upgradesPanel').style.display = 'flex';   // flex column: header fixed, cards scroll, popup overlays the panel
 });
 $('nextDayBtn').addEventListener('click', startNextDay);
-const UP_COST = { supplier: 20, marketing: 20, bookcase: 20 };   // every Night Market item is 20 (Roy)
-function renderUpgrades() {
-  $('upCoins').textContent = coins;
-  document.querySelectorAll('.upbuy').forEach(btn => {
-    const key = btn.dataset.up;
-    if (key === 'marketing') {
-      btn.innerHTML = marketingTonight ? 'Running tonight ✓' : UP_COST.marketing + ' ' + COIN;
-      btn.disabled = marketingTonight || coins < UP_COST.marketing;
-      $('upCard-marketing').classList.toggle('owned', marketingTonight);
-    }
-    else if (upgrades[key]) { btn.textContent = 'Owned ✓'; btn.disabled = true; $('upCard-' + key).classList.add('owned'); }
-    else { btn.innerHTML = UP_COST[key] + ' ' + COIN; btn.disabled = coins < UP_COST[key]; $('upCard-' + key).classList.remove('owned'); }
-  });
+// ---------- Night Market upgrade tree ----------
+// Unlock rule (Roy): an item is unlockable once its prerequisite has been
+// BOUGHT (boughtEver, persistent). Unlocking costs Star Shards (persistent);
+// purchases are per run — EXCEPT the shelves: the case layout (casePlan)
+// is kept across runs and a new run restocks every kept shelf with
+// 25-value books (Roy, 2026-10-16).
+const UPGRADES = [
+  { id: 'supplier',  svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><rect x=\"14\" y=\"34\" width=\"32\" height=\"18\" rx=\"3\" fill=\"#7a3b8c\"/><rect x=\"26\" y=\"24\" width=\"8\" height=\"12\" fill=\"#e8b48c\"/><circle cx=\"30\" cy=\"19\" r=\"7.5\" fill=\"#e8b48c\"/><rect x=\"17\" y=\"13.5\" width=\"26\" height=\"3.6\" rx=\"1.8\" fill=\"#232028\"/><rect x=\"23\" y=\"5\" width=\"14\" height=\"9\" rx=\"2\" fill=\"#232028\"/><rect x=\"21.5\" y=\"18\" width=\"17\" height=\"4\" rx=\"2\" fill=\"#14100c\"/><rect x=\"41\" y=\"36\" width=\"11\" height=\"14\" rx=\"2\" fill=\"#ffd94a\" transform=\"rotate(14 46 43)\"/><text x=\"46.5\" y=\"46.5\" font-size=\"9\" font-weight=\"bold\" fill=\"#7a5410\" text-anchor=\"middle\" transform=\"rotate(14 46 43)\">$</text></svg>", icon: '🕶️', name: 'Sleazy Book Supplier', unlock: 0, cost: 20, desc: 'Knows a guy — himself. He <b>replaces the Mysterious Man</b> for the nightly restock: <b>25</b> a book instead of the Man\'s 30. (The Man still collects the rent.)' },
+  { id: 'marketing', svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><path d=\"M10 26 L34 16 L34 44 L10 34 Z\" fill=\"#c4503c\"/><rect x=\"6\" y=\"25\" width=\"5\" height=\"10\" rx=\"2\" fill=\"#8c3527\"/><path d=\"M16 35 L20 35 L22 47 L16 47 Z\" fill=\"#6e4630\"/><path d=\"M40 20 a14 14 0 0 1 0 20\" stroke=\"#ffd94a\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M45 15 a21 21 0 0 1 0 30\" stroke=\"#ffd94a\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\".55\"/></svg>", icon: '📣', name: 'Marketing', unlock: 0, cost: 20, service: true, desc: 'A flyer run, a sandwich board out front, chalk arrows on the sidewalk. Word gets around: <b>+5 reputation</b>. Once per night.' },
+  { id: 'bookcase',  svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><rect x=\"12\" y=\"6\" width=\"36\" height=\"48\" fill=\"#7d5a30\"/><rect x=\"15\" y=\"9\" width=\"30\" height=\"42\" fill=\"#43301d\"/><line x1=\"15\" y1=\"23\" x2=\"45\" y2=\"23\" stroke=\"#96733d\" stroke-width=\"2.6\"/><line x1=\"15\" y1=\"37\" x2=\"45\" y2=\"37\" stroke=\"#96733d\" stroke-width=\"2.6\"/><rect x=\"18\" y=\"13\" width=\"5\" height=\"10\" fill=\"#4f7d4a\"/><rect x=\"24\" y=\"12\" width=\"5\" height=\"11\" fill=\"#7a9e43\"/><rect x=\"33\" y=\"13\" width=\"5\" height=\"10\" fill=\"#5a8c6e\"/><rect x=\"20\" y=\"27\" width=\"5\" height=\"10\" fill=\"#8a5fa0\"/><rect x=\"26\" y=\"26\" width=\"5\" height=\"11\" fill=\"#6a4a8c\"/><rect x=\"36\" y=\"27\" width=\"5\" height=\"10\" fill=\"#a06ab0\"/><rect x=\"19\" y=\"41\" width=\"5\" height=\"10\" fill=\"#4f7d4a\"/><rect x=\"30\" y=\"40\" width=\"5\" height=\"11\" fill=\"#8a5fa0\"/><rect x=\"37\" y=\"41\" width=\"5\" height=\"10\" fill=\"#7a9e43\"/></svg>", icon: '🗄️', name: 'Bookcase Upgrade', unlock: 0, cost: 20, desc: 'Proper three-tier bookcases, built overnight. Each case holds <b>9 books</b> instead of 6.' },
+  { id: 'appraisal', svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><path d=\"M30 18 C24 13 16 13 10 15 V44 C16 42 24 42 30 47 Z\" fill=\"#f3e9d2\"/><path d=\"M30 18 C36 13 44 13 50 15 V44 C44 42 36 42 30 47 Z\" fill=\"#e9dcbc\"/><line x1=\"30\" y1=\"18\" x2=\"30\" y2=\"47\" stroke=\"#b09a6a\" stroke-width=\"2\"/><line x1=\"15\" y1=\"23\" x2=\"25\" y2=\"21\" stroke=\"#b09a6a\" stroke-width=\"2\"/><line x1=\"15\" y1=\"30\" x2=\"25\" y2=\"28\" stroke=\"#b09a6a\" stroke-width=\"2\"/><line x1=\"35\" y1=\"21\" x2=\"45\" y2=\"23\" stroke=\"#b09a6a\" stroke-width=\"2\"/><circle cx=\"37\" cy=\"35\" r=\"10.4\" fill=\"rgba(160,210,235,.35)\" stroke=\"#5a4326\" stroke-width=\"3.4\"/><line x1=\"44.4\" y1=\"42.4\" x2=\"52.4\" y2=\"50.4\" stroke=\"#5a4326\" stroke-width=\"4.6\" stroke-linecap=\"round\"/><circle cx=\"37\" cy=\"35\" r=\"4.2\" fill=\"#ffd94a\" stroke=\"#c9a227\" stroke-width=\"1.4\"/></svg>", icon: '🔍', name: 'Appraisal Course', unlock: 2, cost: 20, desc: 'Learn to price at a glance: appraisal ranges are roughly <b>halved</b>.' },
+  { id: 'shelf',     svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><rect x=\"7\" y=\"9\" width=\"30\" height=\"43\" fill=\"#7d5a30\"/><rect x=\"10\" y=\"12\" width=\"24\" height=\"37\" fill=\"#43301d\"/><line x1=\"10\" y1=\"24\" x2=\"34\" y2=\"24\" stroke=\"#96733d\" stroke-width=\"2.4\"/><line x1=\"10\" y1=\"37\" x2=\"34\" y2=\"37\" stroke=\"#96733d\" stroke-width=\"2.4\"/><rect x=\"13\" y=\"15\" width=\"4.6\" height=\"9\" fill=\"#3fae5a\"/><rect x=\"19\" y=\"14\" width=\"4.6\" height=\"10\" fill=\"#8b4fc4\"/><rect x=\"25\" y=\"15\" width=\"4.6\" height=\"9\" fill=\"#e08a3c\"/><rect x=\"13\" y=\"27\" width=\"4.6\" height=\"10\" fill=\"#8b4fc4\"/><rect x=\"19\" y=\"28\" width=\"4.6\" height=\"9\" fill=\"#3fae5a\"/><rect x=\"40\" y=\"9\" width=\"14\" height=\"43\" fill=\"none\" stroke=\"#c9a35a\" stroke-width=\"2\" stroke-dasharray=\"4 3\"/><circle cx=\"46\" cy=\"45\" r=\"9.4\" fill=\"#ffd94a\"/><path d=\"M46 40 v10 M41 45 h10\" stroke=\"#7a5410\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>", icon: '📚', name: 'Extra Shelf', unlock: 2, cost: 30, prereq: 'bookcase', repeatable: true, desc: 'One more bookcase, for your least-shelved genre. The shop fits 8 cases in total.' },
+  { id: 'chair',     svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><rect x=\"16\" y=\"7\" width=\"28\" height=\"27\" rx=\"7\" fill=\"#8c3b4a\"/><rect x=\"20\" y=\"11\" width=\"20\" height=\"19\" rx=\"4\" fill=\"#a34a5e\"/><rect x=\"9\" y=\"24\" width=\"42\" height=\"14\" rx=\"5\" fill=\"#a34a5e\"/><rect x=\"9\" y=\"24\" width=\"42\" height=\"6\" rx=\"3\" fill=\"#c96a7a\"/><rect x=\"6\" y=\"19\" width=\"8\" height=\"19\" rx=\"4\" fill=\"#6e2c38\"/><rect x=\"46\" y=\"19\" width=\"8\" height=\"19\" rx=\"4\" fill=\"#6e2c38\"/><rect x=\"24\" y=\"27\" width=\"12\" height=\"8\" rx=\"1\" fill=\"#f3e9d2\" transform=\"rotate(-8 30 31)\"/><rect x=\"14\" y=\"40\" width=\"5\" height=\"9\" fill=\"#5a4326\"/><rect x=\"41\" y=\"40\" width=\"5\" height=\"9\" fill=\"#5a4326\"/></svg>", icon: '🪑', name: 'Comfy Chair', unlock: 2, cost: 30, desc: 'A reading chair on the floor. One waiting customer can sit — while seated, their patience drains at <b>1/4 speed</b>.' },
+  { id: 'speed',     svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><path d=\"M3 20 h11 M1.6 27 h9.4\" stroke=\"#ffd94a\" stroke-width=\"3.2\" stroke-linecap=\"round\"/><path d=\"M8 33 C15 32 21 27 26 18 C28 14.6 32.4 14.8 34 18 L36.4 24.6 L50 29.6 C53.4 30.8 53 36 49.6 36.4 L11 38 C7 38.2 5.4 34.6 8 33 Z\" fill=\"#d95f43\"/><rect x=\"6\" y=\"37.4\" width=\"47\" height=\"5\" rx=\"2.4\" fill=\"#f3e9d2\"/><path d=\"M26.4 20.6 l5 3 M23.6 25.6 l5 3\" stroke=\"#f3e9d2\" stroke-width=\"2.4\" stroke-linecap=\"round\"/></svg>", icon: '👟', name: 'Comfy Shoes', unlock: 2, cost: 30, desc: 'Comfortable shoes, efficient routes. <b>You move 20% faster.</b>' },
+  { id: 'cat',       svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><circle cx=\"30\" cy=\"34\" r=\"17\" fill=\"#e8a34c\"/><path d=\"M16.4 24.4 L13.4 9.4 L27 16.4 Z\" fill=\"#e8a34c\"/><path d=\"M43.6 24.4 L46.6 9.4 L33 16.4 Z\" fill=\"#e8a34c\"/><path d=\"M17.6 21.2 L15.9 13.6 L23.4 17.5 Z\" fill=\"#f2c894\"/><path d=\"M42.4 21.2 L44.1 13.6 L36.6 17.5 Z\" fill=\"#f2c894\"/><circle cx=\"23.4\" cy=\"32\" r=\"2.4\" fill=\"#2b2b2b\"/><circle cx=\"36.6\" cy=\"32\" r=\"2.4\" fill=\"#2b2b2b\"/><ellipse cx=\"30\" cy=\"36.2\" rx=\"2.2\" ry=\"1.6\" fill=\"#c96a7a\"/><path d=\"M27.4 39.4 q2.6 1.8 5.2 0\" stroke=\"#2b2b2b\" stroke-width=\"1.7\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M11 33.4 h7.4 M12 39.6 l6.4 -1.4 M49 33.4 h-7.4 M48 39.6 l-6.4 -1.4\" stroke=\"#c77f2e\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>", icon: '🐱', name: 'Shop Cat', unlock: 3, cost: 40, prereq: 'supplier', desc: 'A cat moves in and roams the store. Customers near it <b>regain patience</b> — nobody stays annoyed next to a cat.' },
+  { id: 'reliable',  svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><rect x=\"21\" y=\"11\" width=\"8\" height=\"9\" fill=\"#7d5a30\"/><rect x=\"9\" y=\"19\" width=\"31\" height=\"27\" rx=\"2\" fill=\"#b3813f\"/><rect x=\"9\" y=\"19\" width=\"31\" height=\"8\" fill=\"#96733d\"/><path d=\"M24.5 19 v27\" stroke=\"#8a6d3f\" stroke-width=\"3\"/><path d=\"M13 32 h9 M13 37.4 h9\" stroke=\"#8a6d3f\" stroke-width=\"2.2\"/><circle cx=\"43\" cy=\"41\" r=\"11.4\" fill=\"#3fae5a\" stroke=\"#f3e9d2\" stroke-width=\"2.6\"/><path d=\"M37.2 41.4 l4.1 4.1 l7.6 -8\" stroke=\"#fff\" stroke-width=\"3.2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>", icon: '🤝', name: 'Reliable Supplier', unlock: 4, cost: 40, prereq: 'supplier', runPrereq: 'supplier', desc: 'An honest supplier. Books cost <b>20</b> and sell for <b>25</b>.' },
+  { id: 'speed2',    svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><path d=\"M10 21 C15.6 13.8 25.4 8.6 36.4 7.8 C31.8 11.8 30.8 15.2 32.8 18.2 C25.2 16.9 16.6 17.9 10 21 Z\" fill=\"#efe3c8\" stroke=\"#cbbd97\" stroke-width=\"1.4\"/><path d=\"M3 24 h10 M1.6 31 h8.4\" stroke=\"#ffd94a\" stroke-width=\"3.2\" stroke-linecap=\"round\"/><path d=\"M8 33 C15 32 21 27 26 18 C28 14.6 32.4 14.8 34 18 L36.4 24.6 L50 29.6 C53.4 30.8 53 36 49.6 36.4 L11 38 C7 38.2 5.4 34.6 8 33 Z\" fill=\"#d95f43\"/><rect x=\"6\" y=\"37.4\" width=\"47\" height=\"5\" rx=\"2.4\" fill=\"#f3e9d2\"/><path d=\"M26.4 20.6 l5 3 M23.6 25.6 l5 3\" stroke=\"#f3e9d2\" stroke-width=\"2.4\" stroke-linecap=\"round\"/></svg>", icon: '👟', name: 'Comfy Shoes II', unlock: 5, cost: 50, prereq: 'speed', desc: 'You know every shortcut in this shop. <b>You move 40% faster.</b>' },
+  { id: 'bookcase2', svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><rect x=\"14\" y=\"2.6\" width=\"32\" height=\"54.8\" fill=\"#7d5a30\"/><rect x=\"17\" y=\"5.6\" width=\"26\" height=\"48.8\" fill=\"#43301d\"/><line x1=\"17\" y1=\"17.6\" x2=\"43\" y2=\"17.6\" stroke=\"#96733d\" stroke-width=\"2.2\"/><line x1=\"17\" y1=\"29.8\" x2=\"43\" y2=\"29.8\" stroke=\"#96733d\" stroke-width=\"2.2\"/><line x1=\"17\" y1=\"42\" x2=\"43\" y2=\"42\" stroke=\"#96733d\" stroke-width=\"2.2\"/><g fill=\"#3fae5a\"><rect x=\"20\" y=\"9\" width=\"4.4\" height=\"8.6\"/><rect x=\"33\" y=\"8.6\" width=\"4.4\" height=\"9\"/></g><g fill=\"#8b4fc4\"><rect x=\"26.4\" y=\"9.4\" width=\"4.4\" height=\"8.2\"/><rect x=\"20\" y=\"21\" width=\"4.4\" height=\"8.8\"/></g><g fill=\"#e08a3c\"><rect x=\"26.4\" y=\"21.4\" width=\"4.4\" height=\"8.4\"/><rect x=\"33\" y=\"20.8\" width=\"4.4\" height=\"9\"/></g><g fill=\"#3cc4b0\"><rect x=\"20\" y=\"33.2\" width=\"4.4\" height=\"8.8\"/><rect x=\"33\" y=\"33\" width=\"4.4\" height=\"9\"/></g><g fill=\"#c4503c\"><rect x=\"26.4\" y=\"33.6\" width=\"4.4\" height=\"8.4\"/><rect x=\"20\" y=\"45.4\" width=\"4.4\" height=\"9\"/></g><g fill=\"#3fae5a\"><rect x=\"26.4\" y=\"45\" width=\"4.4\" height=\"9.4\"/><rect x=\"33\" y=\"45.6\" width=\"4.4\" height=\"8.8\"/></g></svg>", icon: '🗄️', name: 'Bookcase Upgrade II', unlock: 5, cost: 40, prereq: 'bookcase', desc: 'Floor-to-ceiling cases. Each holds <b>12 books</b>.' },
+  { id: 'checker',   svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><path d=\"M27.4 16 V3.6 h9.6 V16 l-2.4 -2.2 l-2.4 2.2 l-2.4 -2.2 Z\" fill=\"#f3e9d2\"/><rect x=\"12\" y=\"29\" width=\"36\" height=\"19\" rx=\"3\" fill=\"#5a6e8c\"/><rect x=\"12\" y=\"29\" width=\"36\" height=\"6\" fill=\"#42536c\"/><rect x=\"16.6\" y=\"14.6\" width=\"20\" height=\"13\" rx=\"2\" fill=\"#f3e9d2\"/><rect x=\"20\" y=\"17.8\" width=\"13\" height=\"2.8\" fill=\"#7a8a6a\"/><rect x=\"20\" y=\"22\" width=\"8.6\" height=\"2.8\" fill=\"#7a8a6a\"/><rect x=\"24.6\" y=\"25.6\" width=\"4\" height=\"4.4\" fill=\"#42536c\"/><circle cx=\"20.4\" cy=\"40\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"30\" cy=\"40\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"39.6\" cy=\"40\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"20.4\" cy=\"44.6\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"30\" cy=\"44.6\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"39.6\" cy=\"44.6\" r=\"1.8\" fill=\"#f3e9d2\"/></svg>", icon: '🧾', name: 'Checker', unlock: 5, cost: 60, prereq: 'shelf', desc: 'Hire a cashier: the front buyer at the checkout is rung up automatically every <b>4 seconds</b>. He stands at the counter all day and takes a <b>50</b> 🪙 wage at day\'s end, before the supplier\'s knock — <b>can\'t pay, and you\'re bankrupt</b>.' },
+  { id: 'poetry',    svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><path d=\"M43 5.4 C30.6 9.4 20.4 21.4 15.8 39.6 L12.6 52.4 L19 50.2 C34.4 43.8 45 27.4 43 5.4 Z\" fill=\"#f3e9d2\"/><path d=\"M40.6 9.8 C31.4 17.8 23.2 29.8 17.2 46.8\" stroke=\"#c96a1e\" stroke-width=\"2.2\" fill=\"none\"/><path d=\"M33 15.4 l-6.4 1 M29.4 21.6 l-6.8 2 M25.4 28.4 l-6.4 2.8 M21.8 35.6 l-5.8 3.4\" stroke=\"#e08a3c\" stroke-width=\"1.7\" stroke-linecap=\"round\"/><path d=\"M37.4 43.4 h15.2 l-2.6 10.8 h-10 Z\" fill=\"#3a3f4a\"/><ellipse cx=\"45\" cy=\"43.4\" rx=\"7.6\" ry=\"2.3\" fill=\"#23242c\"/><circle cx=\"45\" cy=\"49\" r=\"2.1\" fill=\"#e08a3c\"/></svg>", icon: '🎨', name: 'New Genre: Poetry', unlock: 5, cost: 80, prereq: 'bookcase', genre: true, desc: 'Open a <b>Poetry</b> section (orange) — new genre, new customers. Includes its first bookcase.' },
+  { id: 'cat2',      svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><circle cx=\"41\" cy=\"30\" r=\"12.4\" fill=\"#9aa0a8\"/><path d=\"M31.8 22.6 L29.8 11.6 L40.2 16.8 Z\" fill=\"#9aa0a8\"/><path d=\"M50.2 22.6 L52.2 11.6 L41.8 16.8 Z\" fill=\"#9aa0a8\"/><circle cx=\"36.5\" cy=\"28.8\" r=\"1.8\" fill=\"#2b2b2b\"/><circle cx=\"45.5\" cy=\"28.8\" r=\"1.8\" fill=\"#2b2b2b\"/><ellipse cx=\"41\" cy=\"33.2\" rx=\"1.7\" ry=\"1.2\" fill=\"#c96a7a\"/><circle cx=\"21\" cy=\"37\" r=\"13.4\" fill=\"#e8a34c\"/><path d=\"M11.2 28.8 L9.2 16.4 L20.2 21.6 Z\" fill=\"#e8a34c\"/><path d=\"M30.8 28.8 L32.8 16.4 L21.8 21.6 Z\" fill=\"#e8a34c\"/><circle cx=\"16.4\" cy=\"35\" r=\"2\" fill=\"#2b2b2b\"/><circle cx=\"25.6\" cy=\"35\" r=\"2\" fill=\"#2b2b2b\"/><ellipse cx=\"21\" cy=\"39.4\" rx=\"1.9\" ry=\"1.4\" fill=\"#c96a7a\"/></svg>", icon: '🐱', name: 'Second Cat', unlock: 8, cost: 60, prereq: 'cat', desc: 'The first cat gets a colleague. Two roaming circles of calm.' },
+  { id: 'checker2',  svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><g transform=\"translate(-5.4,7.4) scale(0.86)\"><path d=\"M27.4 16 V3.6 h9.6 V16 l-2.4 -2.2 l-2.4 2.2 l-2.4 -2.2 Z\" fill=\"#f3e9d2\"/><rect x=\"12\" y=\"29\" width=\"36\" height=\"19\" rx=\"3\" fill=\"#5a6e8c\"/><rect x=\"12\" y=\"29\" width=\"36\" height=\"6\" fill=\"#42536c\"/><rect x=\"16.6\" y=\"14.6\" width=\"20\" height=\"13\" rx=\"2\" fill=\"#f3e9d2\"/><rect x=\"20\" y=\"17.8\" width=\"13\" height=\"2.8\" fill=\"#7a8a6a\"/><rect x=\"20\" y=\"22\" width=\"8.6\" height=\"2.8\" fill=\"#7a8a6a\"/><rect x=\"24.6\" y=\"25.6\" width=\"4\" height=\"4.4\" fill=\"#42536c\"/><circle cx=\"20.4\" cy=\"40\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"30\" cy=\"40\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"39.6\" cy=\"40\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"20.4\" cy=\"44.6\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"30\" cy=\"44.6\" r=\"1.8\" fill=\"#f3e9d2\"/><circle cx=\"39.6\" cy=\"44.6\" r=\"1.8\" fill=\"#f3e9d2\"/></g><rect x=\"37\" y=\"3.4\" width=\"19\" height=\"13\" rx=\"2.4\" fill=\"#5a6e8c\"/><rect x=\"40.4\" y=\"6.6\" width=\"12.2\" height=\"5.4\" fill=\"#f3e9d2\"/><circle cx=\"48\" cy=\"47\" r=\"10.4\" fill=\"#ffd94a\"/><text x=\"48\" y=\"51.6\" font-size=\"11.5\" font-weight=\"bold\" fill=\"#7a5410\" text-anchor=\"middle\">\u00d72</text></svg>", icon: '🧾', name: 'Second Checker', unlock: 8, cost: 80, prereq: 'checker', desc: 'A second cashier joins: automatic checkout every <b>2 seconds</b>. Each cashier takes <b>50</b> 🪙 a day in wages.' },
+  { id: 'comics',    svg: "<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\"><rect x=\"7\" y=\"8.6\" width=\"46\" height=\"32.4\" rx=\"8\" fill=\"#3cc4b0\"/><path d=\"M19.6 40.6 L17.4 51.4 L31 40.8 Z\" fill=\"#3cc4b0\"/><path d=\"M30 13.6 l2.7 6.9 7.3 -0.6 -5.4 5 1.9 7.1 -6.5 -3.6 -6.5 3.6 1.9 -7.1 -5.4 -5 7.3 0.6 Z\" fill=\"#ffd94a\"/></svg>", icon: '🎭', name: 'New Genre: Comics', unlock: 8, cost: 100, prereq: 'poetry', genre: true, desc: 'Open a <b>Comics</b> section (teal). Includes its first bookcase.' },
+];
+const upById = id => UPGRADES.find(u => u.id === id);
+const reservedSlots = () => (upgrades.poetry ? 0 : 1) + (upgrades.comics ? 0 : 1);   // cases kept free for genre sections not yet opened, so Poetry/Comics can never be locked out by extra shelves (Codex review, 2026-10-18)
+function upState(u) {
+  if (u.service) return marketingTonight ? 'done' : 'buy';
+  if (u.prereq && !boughtEver[u.prereq]) return 'hidden';   // Roy: don't list it at all until the prerequisite is bought
+  if (u.runPrereq && !upgrades[u.runPrereq]) return 'hidden';   // Reliable Supplier: hidden until the Sleazy Supplier is bought THIS RUN (Roy, 2026-10-18 — boughtEver alone showed it on fresh runs)
+  if (u.unlock > 0 && !unlocked[u.id]) return 'unlock';
+  if (u.genre && casePlan.length >= 8) return 'noslot';
+  if (u.repeatable) return casePlan.length >= 8 - reservedSlots() ? 'maxed' : 'buy';
+  return upgrades[u.id] ? 'owned' : 'buy';
 }
-document.querySelectorAll('.upbuy').forEach(btn => btn.addEventListener('click', () => {
-  const key = btn.dataset.up;
-  const cost = UP_COST[key];
-  if (coins < cost) return;
-  if (key === 'marketing') {
-    if (marketingTonight) return;
-    coins -= cost; marketingTonight = true; reputation += 5;   // word gets around
-  } else {
-    if (upgrades[key]) return;
-    coins -= cost; upgrades[key] = true;
+function renderUpgrades() {
+  // Balances in the header (Roy, 2026-10-16): the panel covers the HUD, so
+  // coins / shards / reputation are repeated here — numbers only, no
+  // explanatory text (that removal still stands).
+  $('upCoins').textContent = coins; $('upShards').textContent = shards; $('upRep').textContent = reputation;
+  $('upRepFace').textContent = reputation <= 0 ? '💀' : reputation >= 40 ? '😀' : reputation >= 30 ? '🙂' : reputation >= 18 ? '😐' : reputation >= 8 ? '🙁' : '😠';   // same face as the HUD — never a star (Roy, 2026-10-17)
+  // Order (Roy, 2026-10-16): Marketing pinned on top, always; actionable
+  // cards next; owned/finished cards sink to the bottom of the list.
+  const upRank = u => u.id === 'marketing' ? 0 : (['owned', 'done', 'maxed'].includes(upState(u)) ? 2 : 1);
+  $('upCards').innerHTML = UPGRADES.filter(u => upState(u) !== 'hidden').sort((a, b) => upRank(a) - upRank(b)).map(u => {
+    const st = upState(u);
+    let foot;
+    if (st === 'unlock') foot = '<button class="primary" data-act="unlock" data-up="' + u.id + '"' + (shards < u.unlock ? ' disabled' : '') + '>Unlock ' + u.unlock + ' ✦</button>';
+    else if (st === 'owned') foot = '<button disabled>Owned ✓</button>';
+    else if (st === 'done') foot = '<button disabled>Running ✓</button>';
+    else if (st === 'maxed') foot = '<button disabled>Full ✓</button>';
+    else if (st === 'noslot') foot = '<button disabled>No space</button>';
+    else foot = '<button class="primary" data-act="buy" data-up="' + u.id + '"' + (coins < u.cost ? ' disabled' : '') + '>Buy ' + u.cost + ' ' + COIN + '</button>';
+    const name = u.name + (u.repeatable && upgrades.shelves ? ' ×' + upgrades.shelves : '');
+    return '<div class="upcard' + (st === 'owned' || st === 'done' ? ' owned' : '') + '">' +
+      '<div class="icon" data-info="' + u.id + '">' + (u.svg || u.icon) + '</div><h3>' + name + '</h3>' + foot + '</div>';
+  }).join('');
+}
+function showUpPop(id) {
+  const u = upById(id); if (!u) return;
+  const st = upState(u);
+  $('upPopIcon').innerHTML = u.svg || u.icon;
+  $('upPopName').textContent = u.name;
+  $('upPopDesc').innerHTML = u.desc;
+  $('upPopStatus').textContent =
+    st === 'owned' ? 'Owned ✓ — in effect from tomorrow' :
+    st === 'done' ? 'Running tonight ✓' :
+    st === 'unlock' ? 'Unlock for ' + u.unlock + ' ✦, then buy for ' + u.cost + ' coins' :
+    st === 'maxed' ? (casePlan.length >= 8 ? 'Your shop already has all 8 cases' : 'Floor space is being kept for the Poetry and Comics sections') :
+    st === 'noslot' ? 'No floor space left for a new section' :
+    (u.unlock > 0 ? 'Unlocked ✓ · Buy for ' + u.cost + ' coins' : 'Buy for ' + u.cost + ' coins');
+  $('upPop').style.display = 'flex';
+}
+$('upPopClose').addEventListener('click', () => { $('upPop').style.display = 'none'; });
+$('upPop').addEventListener('click', e => { if (e.target === $('upPop')) $('upPop').style.display = 'none'; });
+$('upCards').addEventListener('click', e => {
+  const info = e.target && e.target.closest ? e.target.closest('[data-info]') : null;
+  if (info) { showUpPop(info.dataset.info); return; }
+  const btn = e.target && e.target.closest ? e.target.closest('button[data-up]') : null;
+  if (!btn || btn.disabled) return;
+  const u = upById(btn.dataset.up);
+  if (btn.dataset.act === 'unlock') {
+    if (shards < u.unlock) return;
+    shards -= u.unlock; unlocked[u.id] = true; saveMeta(); sfx('buy'); renderUpgrades(); return;
   }
+  if (coins < u.cost) return;
+  if (u.service) {
+    if (marketingTonight) return;
+    coins -= u.cost; marketingTonight = true; reputation += 5; hudPop('repBox', 'hudgood'); sfx('boop');   // word gets around
+  } else {
+    coins -= u.cost; boughtEver[u.id] = true;
+    if (u.id === 'shelf') {
+      upgrades.shelves++;
+      const counts = {}; for (const g of casePlan) counts[g] = (counts[g] || 0) + 1;
+      casePlan.push(activeGenres.reduce((a, b) => (counts[a] || 0) <= (counts[b] || 0) ? a : b));
+    } else if (u.genre) { upgrades[u.id] = true; casePlan.push(u.id); }
+    else upgrades[u.id] = true;
+    keptCasePlan = casePlan.slice();
+    keptCats = { cat: !!upgrades.cat, cat2: !!upgrades.cat2 };
+  if (boughtEver.chair) upgrades.chair = true;   // the armchair is furniture — it conveys with the shop (Roy, 2026-10-18)
+    keptCap = upgrades.bookcase2 ? 12 : upgrades.bookcase ? 9 : 6;
+    saveMeta();   // after the purchase lands, so the kept-shelves/cats save is current
+  }
+  resyncSnapshot();   // a refresh tonight must not refund or erase this purchase
   refreshHUD(); sfx('buy');
   renderUpgrades();
-}));
+});
 $('introBar').addEventListener('click', () => { if (endingStep >= 0) advanceEnding(); else advanceIntro(); });
 
 // ---------- Draw ----------
+function drawCat(cat) {
+  ctx.save(); ctx.translate(cat.x, cat.y);
+  ctx.fillStyle = 'rgba(255,170,60,.07)'; ctx.beginPath(); ctx.arc(0, 0, CAT_RADIUS, 0, Math.PI * 2); ctx.fill();
+  ctx.scale(1.7, 1.7);   // bigger cat — we want to see the cuteness (Roy, 2026-10-16). Aura radius above is gameplay, unscaled.
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 8, 13, 3.6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = cat.color; ctx.lineWidth = 3.4; ctx.beginPath(); ctx.moveTo(-10, 2); ctx.quadraticCurveTo(-17, -4, -14, -11); ctx.stroke();
+  ctx.fillStyle = cat.color;
+  ctx.beginPath(); ctx.ellipse(0, 2, 12, 7.4, 0, 0, Math.PI * 2); ctx.fill();          // body
+  ctx.beginPath(); ctx.arc(10, -3, 6.4, 0, Math.PI * 2); ctx.fill();                    // head
+  ctx.beginPath(); ctx.moveTo(5.4, -7.4); ctx.lineTo(7.2, -12.4); ctx.lineTo(9.8, -8.2); ctx.closePath(); ctx.fill();   // ears
+  ctx.beginPath(); ctx.moveTo(11.4, -8.4); ctx.lineTo(14.6, -12.2); ctx.lineTo(15.4, -7.4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#2b2b2b'; ctx.beginPath(); ctx.arc(12.4, -3.4, 1.1, 0, Math.PI * 2); ctx.fill();   // eye
+  if (cat.nap > 0) { ctx.fillStyle = 'rgba(240,240,255,.85)'; ctx.font = 'bold 11px Georgia'; ctx.textAlign = 'center'; ctx.fillText('z', 16, -14); }
+  ctx.restore();
+}
+function drawChair() {
+  ctx.save(); ctx.translate(CHAIR.x, CHAIR.y);
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-19, 24, 42, 6);
+  ctx.fillStyle = '#8c3b4a'; ctx.fillRect(-17, -20, 34, 34);          // back
+  ctx.fillStyle = '#a34a5e'; ctx.fillRect(-13, -16, 26, 26);
+  ctx.fillStyle = '#8c3b4a'; ctx.fillRect(-21, 8, 42, 12);            // seat
+  ctx.fillStyle = '#c96a7a'; ctx.fillRect(-21, 8, 42, 4);
+  ctx.fillStyle = '#6e2c38'; ctx.fillRect(-23, -2, 6, 20); ctx.fillRect(17, -2, 6, 20);   // arms
+  ctx.restore();
+}
 function drawCustomer(c) {
   ctx.save();
   ctx.translate(c.x, c.y);
+  if (cats.length && inCatAura(c)) { ctx.fillStyle = 'rgba(255,110,150,.9)'; ctx.font = '11px serif'; ctx.textAlign = 'center'; ctx.fillText('♥', 0, -34); }
   ctx.scale(1.9, 1.9);
   const L = c.look, x = 0, y = 0;
   const moving = !(c.state === 'haggle' || c.state === 'waitShelf');
@@ -999,6 +1634,38 @@ function drawCustomer(c) {
   if (c.sleazy) {   // shades + gold chain for the supplier
     ctx.fillStyle = '#14100c'; ctx.fillRect(x - 6.4, hy - 1.8, 12.8, 3.6);
     ctx.fillStyle = '#ffd94a'; ctx.fillRect(x - 1, y + 12.5, 2, 2);
+  }
+  ctx.restore();
+}
+// Ending transformation helpers (Roy, 2026-10-17)
+function drawFigure(c) {
+  if (transformT < 0) { drawCustomer(c); return; }
+  const sc = 1 + 0.09 * Math.sin(transformT * 16) * Math.max(0, 1 - transformT / 1.2);
+  ctx.save(); ctx.translate(c.x, c.y); ctx.scale(sc, 1 / sc); ctx.translate(-c.x, -c.y);
+  drawCustomer(c); ctx.restore();
+}
+function drawApronOn(c) {
+  // a cream bookseller's apron over the (former) buyer's coat
+  ctx.fillStyle = '#f3e9d2'; ctx.fillRect(c.x - 8, c.y - 15, 16, 25);
+  ctx.strokeStyle = '#b09a6a'; ctx.lineWidth = 1.2; ctx.strokeRect(c.x - 8, c.y - 15, 16, 25);
+  ctx.beginPath(); ctx.moveTo(c.x - 8, c.y - 15); ctx.lineTo(c.x, c.y - 21); ctx.lineTo(c.x + 8, c.y - 15); ctx.stroke();
+  ctx.fillStyle = '#c4503c'; ctx.fillRect(c.x + 2, c.y - 11, 4.5, 3.4);   // name tag
+  ctx.strokeStyle = 'rgba(90,67,38,.6)'; ctx.beginPath(); ctx.moveTo(c.x - 5, c.y + 3); ctx.lineTo(c.x + 5, c.y + 3); ctx.stroke();
+  ctx.lineWidth = 1;
+}
+function drawTransformSparkles() {
+  ctx.save(); ctx.textAlign = 'center';
+  for (const p of [endBuyer, player]) {
+    if (!p) continue;
+    for (let i = 0; i < 7; i++) {
+      const a = i * 2.4 + transformT * 4, r = 24 + 5 * Math.sin(transformT * 6 + i);
+      ctx.globalAlpha = Math.max(0, Math.sin(Math.PI * Math.min(1, transformT / 1.2))) * 0.95;
+      ctx.fillStyle = i % 2 ? '#ffd94a' : '#f3e9d2';
+      ctx.font = (11 + (i % 3) * 3) + 'px serif';
+      ctx.fillText('✦', p.x + Math.cos(a) * r, p.y - 22 + Math.sin(a) * r * 0.8);
+    }
+    const f = 1 - Math.abs(transformT - 0.55) / 0.18;   // gold ring flash at the swap moment
+    if (f > 0) { ctx.globalAlpha = f * 0.85; ctx.strokeStyle = '#ffd94a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(p.x, p.y - 18, 34 - f * 14, 0, Math.PI * 2); ctx.stroke(); }
   }
   ctx.restore();
 }
@@ -1072,8 +1739,47 @@ function drawBook(x, y, genre, special, s) {
 }
 const SPINE_SHADES = {
   green:  ['#2e7d43', '#3fae5a', '#57bd74', '#2c6e3e', '#6fbf5e', '#47855a'],
-  purple: ['#6d359e', '#8b4fc4', '#a06fd0', '#7c46b0', '#9668c9', '#5d2f8a']
+  purple: ['#6d359e', '#8b4fc4', '#a06fd0', '#7c46b0', '#9668c9', '#5d2f8a'],
+  poetry: ['#c96a1e', '#e08a3c', '#eda45c', '#b85c14', '#e59a4a', '#a34e10'],
+  comics: ['#1f9e8a', '#3cc4b0', '#5fd0bf', '#178a76', '#45bfa9', '#15705f']
 };
+// A bit of the outside (Roy, 2026-10-16): sidewalk + a sliver of street
+// along the bottom frontage. When marketing is on (bought last night), the
+// sandwich-board sign and chalk arrows from its card text appear out front.
+function drawOutside() {
+  ctx.fillStyle = '#3a2c1e'; ctx.fillRect(0, 544, W, 6);                    // storefront step
+  ctx.fillStyle = '#7d766b'; ctx.fillRect(0, 550, W, 42);                   // sidewalk
+  ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2;
+  for (let x = 45; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 550); ctx.lineTo(x, 592); ctx.stroke(); }
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#8d8578'; ctx.fillRect(0, 592, W, 3);                    // curb
+  ctx.fillStyle = '#3c3835'; ctx.fillRect(0, 595, W, 5);                    // street
+  if (!marketingActive) return;
+  // sandwich-board sign by the door (widened a touch — the lettering used to spill off it, Roy, 2026-10-17)
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(150, 590, 27, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#5a4326'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(140, 558); ctx.lineTo(132, 588); ctx.moveTo(160, 558); ctx.lineTo(168, 588); ctx.stroke();
+  ctx.fillStyle = '#f3e9d2';
+  ctx.beginPath(); ctx.moveTo(131, 556); ctx.lineTo(169, 556); ctx.lineTo(174, 586); ctx.lineTo(126, 586); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#5a4326'; ctx.lineWidth = 2; ctx.stroke();
+  // painted open-book glyph on the board (Roy, 2026-10-17: the old emoji
+  // stamp + scrawled text clashed with the shop's painted-wood theme)
+  ctx.fillStyle = '#fff6df'; ctx.strokeStyle = '#5a4326'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(150, 562); ctx.bezierCurveTo(145, 559, 140, 559, 137, 560.5); ctx.lineTo(137, 570); ctx.bezierCurveTo(140, 568.5, 145, 568.5, 150, 571); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(150, 562); ctx.bezierCurveTo(155, 559, 160, 559, 163, 560.5); ctx.lineTo(163, 570); ctx.bezierCurveTo(160, 568.5, 155, 568.5, 150, 571); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(90,67,38,.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(140, 563.5); ctx.lineTo(147, 562.5); ctx.moveTo(140, 566.5); ctx.lineTo(147, 565.5); ctx.moveTo(153, 562.5); ctx.lineTo(160, 563.5); ctx.moveTo(153, 565.5); ctx.lineTo(160, 566.5); ctx.stroke();
+  // no lettering on the board at all (Roy, 2026-10-17) — just the painted open book
+  // chalk arrows on the pavement, pointing at the door — dusty, hand-drawn double strokes
+  ctx.strokeStyle = 'rgba(240,230,205,.45)'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+  for (const [ax, ay] of [[300, 570], [398, 583], [486, 566]]) {
+    for (const j of [[0, 0], [1.2, 0.9]]) {
+      ctx.beginPath(); ctx.moveTo(ax + j[0], ay + j[1]); ctx.lineTo(ax - 34 + j[0], ay + j[1]); ctx.moveTo(ax - 25 + j[0], ay - 5 + j[1]); ctx.lineTo(ax - 35 + j[0], ay + j[1]); ctx.lineTo(ax - 25 + j[0], ay + 5 + j[1]); ctx.stroke();
+    }
+  }
+  ctx.lineWidth = 1;
+}
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
   // wall (upper) + floor (lower)
@@ -1083,13 +1789,17 @@ function draw() {
   ctx.strokeStyle = 'rgba(0,0,0,.10)';
   for (let y = 168; y < H; y += 26) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
   for (let x = 30; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 148); ctx.lineTo(x, H); ctx.stroke(); }
+  drawOutside();
   // rug between the counters
-  ctx.fillStyle = '#74343a'; ctx.fillRect(402, 378, 156, 58);
-  ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(409, 385, 142, 44); ctx.lineWidth = 1;
+  ctx.fillStyle = '#74343a'; ctx.fillRect(402, 346, 156, 58);
+  ctx.strokeStyle = '#c9a35a'; ctx.lineWidth = 3; ctx.strokeRect(409, 353, 142, 44); ctx.lineWidth = 1;
   // (Space for six more bookshelves is kept free in the layout but not drawn.)
+  // cats roam behind the furniture; the Comfy Chair sits mid-floor
+  if (introStep < 0) for (const cat of cats) drawCat(cat);   // the inherited cat isn't in the intro sale scene — it moves in once the run starts (Roy, 2026-10-17)
+  if (upgrades.chair) drawChair();
   // shelves — proper bookcases
-  for (const g of ['green', 'purple']) {
-    const s = SHELF[g];
+  for (const cs of cases) {
+    const g = cs.genre, s = cs;
     ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(s.x - 4, s.y + s.h + 6, s.w + 8, 8);   // shadow
     ctx.fillStyle = '#43301d'; ctx.fillRect(s.x - 6, s.y - 6, s.w + 12, s.h + 12);          // back panel
     ctx.fillStyle = '#7d5a30';
@@ -1101,8 +1811,10 @@ function draw() {
     ctx.fillStyle = '#96733d';
     for (let t = 1; t < tiers; t++) ctx.fillRect(s.x, s.y + t * tierH, s.w, 5);               // middle boards
     ctx.fillRect(s.x, s.y + s.h - 3, s.w, 3);
-    const PER_TIER = 3;
-    shelfStock[g].slice(0, SHELF_CAP).forEach((b, i) => {
+    const PER_TIER = caseCap() / SHELF_TIERS;
+    const ci = casesOf(g).indexOf(s);
+    shelfStock[g].slice(ci * caseCap(), (ci + 1) * caseCap()).forEach((b, i) => {
+      if (!b) return;   // empty slot — the neighbours stay put (Roy, 2026-10-17)
       const tier = Math.floor(i / PER_TIER), slot = i % PER_TIER;
       const surfY = s.y + (tier + 1) * tierH + (tier === tiers - 1 ? 3 : 0);                  // standing surface
       const bh = 34 + ((i * 37) % 8), bw = 24;
@@ -1121,9 +1833,13 @@ function draw() {
     ctx.fillStyle = '#33261a'; ctx.fillRect(s.x + s.w / 2 - 50, s.y - 34, 100, 17);
     ctx.strokeStyle = GENRE_COLOR[g]; ctx.strokeRect(s.x + s.w / 2 - 50, s.y - 34, 100, 17);
     ctx.fillStyle = '#f3e9d2'; ctx.font = 'bold 11.5px Georgia'; ctx.textAlign = 'center';
-    ctx.fillText(GENRE_NAME[g].toUpperCase() + ' (' + shelfStock[g].length + '/' + SHELF_CAP + ')', s.x + s.w / 2, s.y - 21.5);
+    ctx.fillText(GENRE_NAME[g].toUpperCase(), s.x + s.w / 2, s.y - 21.5);   // name only — Roy cut the book counts (2026-10-17)
   }
   // counters — panelled wood, countertop slab, props
+  // the Checker is an actual person, standing at the checkout counter
+  // (Roy, 2026-10-18) — drawn before the counters so the countertop
+  // occludes his lower half: head and shoulders over the till
+  if (upgrades.checker && introStep < 0 && endingStep < 0) { drawCustomer(CASHIER1); if (upgrades.checker2) drawCustomer(CASHIER2); }
   for (const [c, label, isBuy] of [[BUY_COUNTER, 'WE BUY BOOKS', true], [SELL_COUNTER, 'CHECKOUT', false]]) {
     ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(c.x - 3, c.y + c.h + 4, c.w + 6, 7);
     ctx.fillStyle = '#77552c'; ctx.fillRect(c.x, c.y, c.w, c.h);
@@ -1149,9 +1865,11 @@ function draw() {
       ctx.fillRect(c.x + c.w - 103, c.y - 8, 14, 2.6);
     }
   }
-  // door
-  ctx.fillStyle = '#33261a'; ctx.fillRect(DOOR.x - 34, H - 14, 68, 14);
-  ctx.fillStyle = '#c9b18c'; ctx.font = '12px Georgia'; ctx.textAlign = 'center'; ctx.fillText('DOOR', DOOR.x, H - 20);
+  // door — a doorway in the storefront, above the pavement
+  ctx.fillStyle = '#2e2115'; ctx.fillRect(DOOR.x - 32, DOOR.y - 16, 64, 32);
+  ctx.fillStyle = '#17100a'; ctx.fillRect(DOOR.x - 32, DOOR.y - 16, 64, 5);
+  ctx.fillStyle = '#c9b18c'; ctx.fillRect(DOOR.x - 32, DOOR.y + 11, 64, 3);
+  // (no label — Roy, 2026-10-16: the door needs no sign)
   // customers
   for (const c of customers) {
     drawCustomer(c);
@@ -1165,7 +1883,7 @@ function draw() {
     }
     if (c.state === 'leaveMad') { ctx.fillStyle = '#e06868'; ctx.font = '17px serif'; ctx.fillText('💢', c.x, c.y - 60); }
   }
-  if (endBuyer) drawCustomer(endBuyer);
+  if (endBuyer) { drawFigure(endBuyer); if (buyerAsBookseller) drawApronOn(endBuyer); }
   // the landlord (opening sequence only) — shady suit, fedora, deed in hand
   if (landlord) {
     drawCustomer(landlord);
@@ -1174,15 +1892,64 @@ function draw() {
     ctx.fillStyle = '#f3e9d2'; ctx.fillRect(landlord.x + 17, landlord.y - 8, 10, 13);       // the deed
     ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(landlord.x + 19, landlord.y - 4, 6, 1.4); ctx.fillRect(landlord.x + 19, landlord.y - 1, 6, 1.4);
   }
-  // player (the bookseller) — wearing the fedora during the ending sequence
-  drawBookseller();
-  if (endingStep >= 0) {
-    ctx.fillStyle = '#211d26'; ctx.fillRect(player.x - 15, player.y - 46, 30, 5);
-    ctx.fillRect(player.x - 9, player.y - 57, 18, 11);
+  // the overnight visitor, standing on the carpet while his dialog is up (Roy)
+  if (visitor) {
+    drawCustomer(visitor);
+    if (visitor.who === 'man') {
+      ctx.fillStyle = '#211d26'; ctx.fillRect(visitor.x - 15, visitor.y - 46, 30, 5);      // fedora brim
+      ctx.fillRect(visitor.x - 9, visitor.y - 57, 18, 11);                                   // fedora crown
+      ctx.fillStyle = '#f3e9d2'; ctx.fillRect(visitor.x - 27, visitor.y - 8, 10, 13);         // the deed
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(visitor.x - 25, visitor.y - 4, 6, 1.4); ctx.fillRect(visitor.x - 25, visitor.y - 1, 6, 1.4);
+    } else {
+      ctx.fillStyle = '#191919'; ctx.fillRect(visitor.x - 10, visitor.y - 38, 20, 5);         // sunglasses
+      ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(visitor.x, visitor.y - 14, 6, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke(); ctx.lineWidth = 1;   // gold chain
+    }
   }
+  // player — the bookseller, until the ending's transformation turns him
+  // into the Mysterious Man (fedora + dark suit) and he slips away (Roy)
+  if (playerAsMan) {
+    const manFig = { x: player.x, y: player.y, state: 'haggle', kind: 'seller', genre: 'green', look: { skin: '#d9a878', hair: '#23202a', hairStyle: 0, coat: '#2e2a33', flip: false } };
+    drawFigure(manFig);
+    ctx.fillStyle = '#211d26'; ctx.fillRect(player.x - 15, player.y - 46, 30, 5);      // fedora brim
+    ctx.fillRect(player.x - 9, player.y - 57, 18, 11);                                   // fedora crown
+  } else if (transformT >= 0) {
+    const sc = 1 + 0.09 * Math.sin(transformT * 16) * Math.max(0, 1 - transformT / 1.2);
+    ctx.save(); ctx.translate(player.x, player.y); ctx.scale(sc, 1 / sc); ctx.translate(-player.x, -player.y);
+    drawBookseller(); ctx.restore();
+  } else drawBookseller();
+  if (transformT >= 0) drawTransformSparkles();
   carry.forEach((b, i) => drawBook(player.x - 16 + i * 11, player.y - 60, b.genre, b.special, 0.7));
   // flash
   if (flashT > 0) { ctx.fillStyle = '#ffd98a'; ctx.font = 'bold 22px Georgia'; ctx.textAlign = 'center'; ctx.fillText(flashTxt.split('🪙').join('●'), W / 2, 150); }
+  for (const f of floaters) {
+    ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t / 1.1); ctx.textAlign = 'center';
+    if (f.arrow) {
+      // drawn arrows, not glyph text (Roy, 2026-10-17: the emoji arrows looked bad)
+      const up = f.arrow === 'up', ay = f.y - f.t * 26;
+      ctx.translate(f.x - 8, ay); ctx.scale(1, up ? 1 : -1);
+      ctx.fillStyle = up ? '#69c569' : '#e05a5a'; ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(6.5, -2); ctx.lineTo(2.6, -2); ctx.lineTo(2.6, 8); ctx.lineTo(-2.6, 8); ctx.lineTo(-2.6, -2); ctx.lineTo(-6.5, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore(); ctx.save(); ctx.globalAlpha = Math.max(0, 1 - f.t / 1.1);
+      ctx.fillStyle = up ? '#8fe08a' : '#ff9a9a'; ctx.font = 'bold 14px Georgia'; ctx.textAlign = 'left';
+      ctx.fillText(up ? '+1' : '−1', f.x + 1, ay + 5);
+    } else {
+      ctx.font = f.gold || f.good || f.bad ? 'bold 16px Georgia' : '20px serif'; if (f.gold) ctx.fillStyle = '#ffd94a'; if (f.good) ctx.fillStyle = '#7dd87d'; if (f.bad) ctx.fillStyle = '#ff8080';
+      ctx.fillText(f.txt, f.x, f.y - f.t * 26);
+    }
+    ctx.restore();
+  }
+  for (const fl of shardFlights) {
+    if (fl.t < 0 || fl.t > 1) continue;
+    const t = fl.t, cx = (fl.x0 + fl.x1) / 2, cy = Math.min(fl.y0, fl.y1) - 130;
+    const ix = (1 - t) * (1 - t) * fl.x0 + 2 * (1 - t) * t * cx + t * t * fl.x1;
+    const iy = (1 - t) * (1 - t) * fl.y0 + 2 * (1 - t) * t * cy + t * t * fl.y1;
+    ctx.save(); ctx.textAlign = 'center';
+    for (let k = 3; k >= 0; k--) { const tt = Math.max(0, t - k * 0.045); const jx = (1 - tt) * (1 - tt) * fl.x0 + 2 * (1 - tt) * tt * cx + tt * tt * fl.x1; const jy = (1 - tt) * (1 - tt) * fl.y0 + 2 * (1 - tt) * tt * cy + tt * tt * fl.y1; ctx.globalAlpha = 0.25 + 0.75 * (1 - k / 4); ctx.fillStyle = '#ffd94a'; ctx.font = 'bold ' + (15 + (3 - k)) + 'px serif'; ctx.fillText('✦', jx, jy); }
+    ctx.restore();
+  }
+  for (const b of bursts) for (const p of b.ps) { ctx.save(); ctx.globalAlpha = Math.max(0, 1 - p.t / 0.7); ctx.fillStyle = p.color; ctx.font = '13px serif'; ctx.textAlign = 'center'; ctx.fillText(p.glyph, p.x, p.y); ctx.restore(); }
+  if (goldGlowT > 0) { const a = Math.min(0.5, goldGlowT); ctx.save(); ctx.fillStyle = 'rgba(255,217,74,' + (a * 0.07) + ')'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = 'rgba(255,217,74,' + (a * 0.85) + ')'; ctx.lineWidth = 5; ctx.strokeRect(2.5, 2.5, W - 5, H - 5); ctx.restore(); }
+  if (redGlowT > 0) { const a = Math.min(0.5, redGlowT); ctx.save(); ctx.fillStyle = 'rgba(224,104,104,' + (a * 0.08) + ')'; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = 'rgba(224,104,104,' + (a * 0.9) + ')'; ctx.lineWidth = 5; ctx.strokeRect(2.5, 2.5, W - 5, H - 5); ctx.restore(); }
   // opening-sequence coin drain: a stream of coins flying to the landlord…
   for (const p of coinParticles) {
     ctx.fillStyle = '#d4af37'; ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2); ctx.fill();
@@ -1216,11 +1983,170 @@ function loop(ts) {
   update(dt);
   requestAnimationFrame(loop);
 }
+$('colClose').addEventListener('click', () => { $('colPanel').style.display = 'none'; colOpen = false; });
+$('colBtn').addEventListener('click', () => { if (colOpen) { $('colPanel').style.display = 'none'; colOpen = false; } else openCollections(null); });
+updateColCount();
 $('buildTag').textContent = BUILD_LABEL + ' build';
+
+// ---------- Title screen (Roy, 2026-10-17) ----------
+// A little illustrated welcome: the owner with his book, the Mysterious
+// Man with the deed, the cat on the carpet, shelves of books behind.
+// Start gates everything — the intro (and the day) wait behind it.
+let titleOpen = true, titleRaf = 0, titleBooks = null, titleSaveDone = false;
+function titleCtx() { const c = $('titleArt'); return c && c.getContext ? c.getContext('2d') : null; }
+function fillTitleSave() {
+  const n = Object.keys(collected).length, bits = [];
+  if (shards > 0) bits.push('✦ ' + shards);
+  if (n > 0) bits.push('📚 ' + n + '/100 collected');
+  if (keptCasePlan && keptCasePlan.length > 2) bits.push(keptCasePlan.length + ' shelves kept');
+  $('titleSave').textContent = bits.length ? 'Welcome back — ' + bits.join(' · ') : '';
+}
+function makeTitleBooks() {
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const cols = ['#7fae5a', '#9a6ac8', '#e08a3c', '#3fa8a0', '#8a5a3a', '#b8543e', '#5a7fae'];
+  const rows = [];
+  for (let r = 0; r < 2; r++) {
+    const row = []; let x = 166;
+    while (x < 452) { const w = 15 + rnd() * 11, h = 50 + rnd() * 18; row.push({ x, w, h, c: cols[(rnd() * cols.length) | 0], star: rnd() < 0.09 }); x += w + 3; }
+    rows.push(row);
+  }
+  return rows;
+}
+function drawTitleOwner(c, x, y) {
+  c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(x, y + 4, 25, 5, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#3a3f4a'; c.fillRect(x - 13, y - 16, 9, 16); c.fillRect(x + 4, y - 16, 9, 16);          // legs
+  c.fillStyle = '#2e6f6a'; c.fillRect(x - 19, y - 53, 38, 39);                                            // coat
+  c.fillStyle = '#f3e9d2'; c.fillRect(x - 11, y - 51, 22, 35);                                            // apron
+  c.fillStyle = '#c0392b'; c.fillRect(x + 3, y - 44, 5, 7);                                               // name tag
+  c.fillStyle = '#2e6f6a'; c.fillRect(x - 27, y - 51, 8, 27); c.fillRect(x + 19, y - 51, 8, 27);           // arms
+  c.fillStyle = '#f7efdb'; c.beginPath();                                                                  // the open book
+  c.moveTo(x, y - 36); c.lineTo(x - 17, y - 41); c.lineTo(x - 17, y - 25); c.lineTo(x, y - 20);
+  c.lineTo(x + 17, y - 25); c.lineTo(x + 17, y - 41); c.lineTo(x, y - 36); c.fill();
+  c.strokeStyle = '#b09a72'; c.beginPath(); c.moveTo(x, y - 36); c.lineTo(x, y - 20); c.stroke();
+  c.fillStyle = '#f0c8a0'; c.beginPath(); c.arc(x, y - 66, 15, 0, Math.PI * 2); c.fill();                  // head
+  c.fillStyle = '#5a4632'; c.fillRect(x - 15, y - 81, 30, 9); c.fillRect(x - 15, y - 81, 5, 14); c.fillRect(x + 10, y - 81, 5, 14);   // hair
+  c.strokeStyle = '#222'; c.lineWidth = 1.6;
+  c.beginPath(); c.arc(x - 6.5, y - 66, 5.5, 0, Math.PI * 2); c.stroke();
+  c.beginPath(); c.arc(x + 6.5, y - 66, 5.5, 0, Math.PI * 2); c.stroke();
+  c.beginPath(); c.moveTo(x - 1, y - 66); c.lineTo(x + 1, y - 66); c.stroke(); c.lineWidth = 1;
+  c.fillStyle = '#222'; c.beginPath(); c.arc(x, y - 58, 3.4, 0.15 * Math.PI, 0.85 * Math.PI); c.fill();  // smile
+}
+function drawTitleMan(c, x, y) {
+  c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(x, y + 4, 25, 5, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#1d1a22'; c.fillRect(x - 13, y - 16, 9, 16); c.fillRect(x + 4, y - 16, 9, 16);
+  c.fillStyle = '#34303c'; c.fillRect(x - 19, y - 53, 38, 39);                                            // suit
+  c.fillStyle = '#f3e9d2'; c.beginPath(); c.moveTo(x - 6, y - 53); c.lineTo(x + 6, y - 53); c.lineTo(x, y - 40); c.fill();   // shirt V
+  c.fillStyle = '#34303c'; c.fillRect(x - 27, y - 51, 8, 27);                                             // left arm
+  c.save(); c.translate(x + 23, y - 50); c.rotate(-0.5); c.fillRect(-4, 0, 8, 26); c.restore();           // right arm, raised
+  c.save(); c.translate(x + 36, y - 66); c.rotate(0.14);                                                    // the deed
+  c.fillStyle = '#f3e9d2'; c.fillRect(-10, -13, 20, 26);
+  c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(-6, -6, 12, 1.6); c.fillRect(-6, -1, 12, 1.6); c.fillRect(-6, 4, 8, 1.6); c.restore();
+  c.fillStyle = '#d9a878'; c.beginPath(); c.arc(x, y - 66, 15, 0, Math.PI * 2); c.fill();                  // head
+  c.fillStyle = '#211d26'; c.fillRect(x - 18, y - 77, 36, 5); c.fillRect(x - 10, y - 89, 20, 12);          // fedora
+  c.fillStyle = '#222'; c.beginPath(); c.arc(x - 6, y - 66, 1.7, 0, Math.PI * 2); c.fill();                // eye
+  c.strokeStyle = '#222'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x + 3, y - 66); c.lineTo(x + 10, y - 66); c.stroke(); c.lineWidth = 1;   // wink
+  c.beginPath(); c.arc(x + 1, y - 59, 4, 0.1 * Math.PI, 0.7 * Math.PI); c.stroke();                       // sly smile
+}
+function drawTitleCat(c, x, y, t) {
+  const sway = Math.sin(t * 2.6) * 4;
+  c.fillStyle = 'rgba(0,0,0,.22)'; c.beginPath(); c.ellipse(x, y + 3, 28, 5, 0, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = '#e8a34c'; c.lineWidth = 7; c.beginPath();                                              // tail
+  c.moveTo(x + 20, y - 4); c.quadraticCurveTo(x + 36, y - 14 + sway * 0.4, x + 31, y - 28 + sway); c.stroke(); c.lineWidth = 1;
+  c.fillStyle = '#e8a34c'; c.beginPath(); c.ellipse(x, y - 11, 25, 15, 0, 0, Math.PI * 2); c.fill();      // body
+  c.strokeStyle = '#c47f2e'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(x + 2, y - 24); c.lineTo(x + 4, y - 16); c.moveTo(x + 10, y - 25); c.lineTo(x + 12, y - 17); c.stroke(); c.lineWidth = 1;   // stripes
+  c.fillStyle = '#e8a34c'; c.beginPath(); c.arc(x - 15, y - 23, 12.5, 0, Math.PI * 2); c.fill();          // head
+  c.beginPath(); c.moveTo(x - 25, y - 31); c.lineTo(x - 21, y - 41); c.lineTo(x - 15, y - 33); c.fill();   // ears
+  c.beginPath(); c.moveTo(x - 13, y - 33); c.lineTo(x - 7, y - 41); c.lineTo(x - 4, y - 30); c.fill();
+  c.strokeStyle = '#7a4a16'; c.lineWidth = 1.6;                                                           // happy closed eyes
+  c.beginPath(); c.arc(x - 19, y - 23, 3, 1.15 * Math.PI, 1.85 * Math.PI); c.stroke();
+  c.beginPath(); c.arc(x - 10, y - 23, 3, 1.15 * Math.PI, 1.85 * Math.PI); c.stroke(); c.lineWidth = 1;
+  c.fillStyle = '#c46a7a'; c.beginPath(); c.arc(x - 14.5, y - 18.5, 1.6, 0, Math.PI * 2); c.fill();       // nose
+  c.fillStyle = '#e8a34c'; c.beginPath(); c.ellipse(x - 8, y - 1, 6, 3, 0, 0, Math.PI * 2); c.ellipse(x + 7, y - 1, 6, 3, 0, 0, Math.PI * 2); c.fill();   // paws
+}
+function drawTitleArt(ts) {
+  if (!titleOpen) return;
+  titleRaf = requestAnimationFrame(drawTitleArt);
+  const c = titleCtx(); if (!c) return;
+  const t = ts / 1000;
+  if (!titleSaveDone) { titleSaveDone = true; fillTitleSave(); setupTitleButtons(); }
+  if (!titleBooks) titleBooks = makeTitleBooks();
+  c.fillStyle = '#6d5138'; c.fillRect(0, 0, 640, 340);                                                    // wall
+  c.fillStyle = '#593f2a'; c.fillRect(0, 218, 640, 122);                                                   // floor
+  c.strokeStyle = 'rgba(0,0,0,.16)'; c.beginPath();
+  for (let x = 40; x < 640; x += 52) { c.moveTo(x, 222); c.lineTo(x - 12, 340); }
+  c.moveTo(0, 262); c.lineTo(640, 262); c.moveTo(0, 306); c.lineTo(640, 306); c.stroke();
+  c.fillStyle = 'rgba(0,0,0,.28)'; c.fillRect(0, 214, 640, 4);
+  // hanging plaque with an open-book glyph
+  c.fillStyle = '#33261a'; c.fillRect(274, 6, 92, 26); c.strokeStyle = '#c9a35a'; c.strokeRect(274, 6, 92, 26);
+  c.fillStyle = '#f3e9d2'; c.beginPath();
+  c.moveTo(320, 13); c.lineTo(306, 10); c.lineTo(306, 24); c.lineTo(320, 27); c.lineTo(334, 24); c.lineTo(334, 10); c.lineTo(320, 13); c.fill();
+  // bookshelf
+  c.fillStyle = '#3d2a18'; c.fillRect(150, 38, 340, 168);
+  c.fillStyle = '#2c1e10'; c.fillRect(158, 46, 324, 152);
+  c.fillStyle = '#3d2a18'; c.fillRect(158, 118, 324, 8); c.fillRect(158, 190, 324, 8);
+  const bottoms = [118, 190];
+  for (let r = 0; r < 2; r++) for (const b of titleBooks[r]) {
+    c.fillStyle = b.c; c.fillRect(b.x, bottoms[r] - b.h, b.w, b.h);
+    c.fillStyle = 'rgba(255,255,255,.28)'; c.fillRect(b.x, bottoms[r] - b.h + 6, b.w, 3);
+    if (b.star) { c.fillStyle = '#ffd94a'; c.font = 'bold 11px serif'; c.textAlign = 'center'; c.fillText('✦', b.x + b.w / 2, bottoms[r] - b.h + 26); }
+  }
+  // the carpet
+  c.fillStyle = '#c9a35a'; c.fillRect(192, 256, 256, 54);
+  c.fillStyle = '#7a3040'; c.fillRect(196, 260, 248, 46);
+  // twinkles
+  c.fillStyle = '#ffd94a'; c.font = '14px serif'; c.textAlign = 'center';
+  const tw = [[92, 84], [548, 70], [566, 168], [76, 190], [520, 250]];
+  tw.forEach((pt, i) => { c.globalAlpha = 0.25 + 0.75 * Math.abs(Math.sin(t * 1.6 + i * 1.3)); c.fillText('✦', pt[0], pt[1]); });
+  c.globalAlpha = 1;
+  drawTitleOwner(c, 252, 288 + Math.sin(t * 2) * 2);
+  drawTitleMan(c, 392, 288 + Math.sin(t * 2 + 1.3) * 2);
+  drawTitleCat(c, 322, 302, t);
+  const ha = Math.max(0, Math.sin(t * 1.1) - 0.78) * 4;
+  if (ha > 0) { c.globalAlpha = Math.min(1, ha); c.fillStyle = '#e0687a'; c.font = '15px serif'; c.fillText('♥', 356, 262 - Math.sin(t * 1.1) * 4); c.globalAlpha = 1; }
+}
+function setupTitleButtons() {
+  const snap = loadRunSnapshot(), cb = $('continueBtn');
+  if (snap) { cb.textContent = '▶ Continue — Day ' + snap.day; cb.style.display = ''; }
+  else cb.style.display = 'none';
+}
+$('continueBtn').addEventListener('click', () => {
+  const snap = loadRunSnapshot(); if (!snap) return;
+  titleOpen = false;   // drawTitleArt sees this and stops rescheduling itself
+  $('titlePanel').style.display = 'none';
+  musicStart();
+  restoreRun(snap);   // back to the morning of the day last played, state intact (Roy, 2026-10-17)
+});
+let wipeArmed = false;
+$('newGameBtn').addEventListener('click', () => {
+  // New Game means NEW (Roy, 2026-10-17: "I got four shards when I clicked
+  // new") — the whole save goes: shards, unlocks, collections, shelves, cat,
+  // and the old Continue point. With progress on the line, the first click
+  // arms the button instead of erasing on a stray tap.
+  // The tap-again-to-erase step only guards a Continue point (Roy,
+  // 2026-10-18): with nothing to continue, there's no erase button —
+  // New Game just starts, one tap, fresh save and all.
+  const hasContinue = !!loadRunSnapshot();
+  if (hasContinue && !wipeArmed) { wipeArmed = true; $('newGameBtn').textContent = 'Erase save & start fresh?'; return; }
+  wipeArmed = false;
+  shards = 0; unlocked = {}; boughtEver = {}; collected = {}; collectionsDone = {};
+  keptCasePlan = null; keptCap = 6; keptCats = null; keptStock = null; inheritCat = false;
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  storySeen = false;
+  titleOpen = false;
+  $('titlePanel').style.display = 'none';
+  musicStart();
+  snapshotArmed = true;   // the fresh Day 1 becomes the new Continue point
+  reset();                // scratch run: story intro if unseen, Day 1 behind it
+  updateColCount();
+  if (storySeen) running = true;
+});
+titleRaf = requestAnimationFrame(drawTitleArt);
+
 // A refresh / back-forward-cache restore can resurrect a stale DOM with panels
 // in odd states — on a persisted pageshow, force one clean opening state.
 addEventListener('pageshow', e => {
-  if (e.persisted) { reset(); if (storySeen) running = true; draw(); }
+  if (e.persisted) location.reload();   // a back/forward-cache restore reboots to the title screen, where Continue is offered — it must not silently reset the run to Day 1 (Codex review, 2026-10-18)
 });
 reset();
 draw();
